@@ -26,13 +26,7 @@ function GetLocalTime()
     current=`date "+%Y-%m-%d %H:%M:%S"`
     timeStamp=`date -d "$current" +%s`
 
-    temp=`date "+%N"`
-    if [ ${temp:0:1} == 0 ]; then
-        temp=${temp:1}
-    fi
-    #将current转换为时间戳，精确到毫秒  
-    currentTimeStamp=$((timeStamp*1000+${temp}/1000000))
-    echo $currentTimeStamp
+    echo $timeStamp
 }
 
 function IsNum()
