@@ -1,13 +1,13 @@
-#Client模块
-##1. 模块介绍
+# Client模块
+## 1. 模块介绍
 Cli模块通过RPC接口，直接调用chain33内部的接口实现系统服务。RPC是通过提供一系列协议方式，对外部应用提供各种系统服务的，在chain33中主要采用了用protobuf定义协议的grpc服务和用json定义协议的jsonrpc服务，分别为不同的前端应用提供相同的系统服务。可以简单的将Cli模块理解成一个前端应用。
 
-##2. 逻辑架构及上下文
-###2.1 模块关系图
+## 2. 逻辑架构及上下文
+### 2.1 模块关系图
 * chain33中的位置
 
-###2.2 处理逻辑
-####2.2.1 指令的创建
+### 2.2 处理逻辑
+#### 2.2.1 指令的创建
 chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所有指令集统一的入口。
 
 	var rootCmd = &cobra.Command{
@@ -66,7 +66,7 @@ chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所�
 		cmd.Flags().StringP("detail", "d", "f", "whether print header detail info (0/f/false for No; 1/t/true for Yes)")
 	}
 
-####2.2.2 指令的注册
+#### 2.2.2 指令的注册
 执行指令实际上是调用chain33内部已经注册好的一些接口函数。例如block last_header命令中最终调用的是chain33内部的GetLastHeader()函数
 
 	func lastHeader(cmd *cobra.Command, args []string) {
@@ -180,7 +180,7 @@ chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所�
 			go japi.Listen()
 		}
 
-####2.2.3 指令的处理
+#### 2.2.3 指令的处理
 目前Chain33中命令集在接收响应时均使用的json编码，所以针对jsonRPC看下Server是如何处理命令集的rpc请求的。
 
 	func (j *JSONRPCServer) Listen() {
@@ -271,9 +271,9 @@ handler的ServeRequest函数中，从接收到的请求中解码出需要调用�
 	}
 
 
-##3. 指令介绍
+## 3. 指令介绍
 
-###3.1 account
+### 3.1 account
 Account management
 
 	Usage:
@@ -288,7 +288,7 @@ Account management
 	  set_label   Set label for account address
 
 
-####3.1.1 account balance 地址余额查询
+#### 3.1.1 account balance 地址余额查询
 cli account balance -a "查询地址" -e "执行器地址"
 
 	[lyn@localhost build]$ ./chain33-cli account balance -a 14KEKbYtKKQm4wMthSK9J4La4nAiidGozt
@@ -305,7 +305,7 @@ cli account balance -a "查询地址" -e "执行器地址"
 	    ]
 	}
 
-####3.1.2 account create 新建钱包地址
+#### 3.1.2 account create 新建钱包地址
 cli account create -l "自定义地址标签"
 	
 	[lyn@localhost build]$ ./chain33-cli account create -l test
@@ -318,14 +318,14 @@ cli account create -l "自定义地址标签"
 	    "label": "test"
 	}
 
-####3.1.3 account dump_key 钱包地址私钥导出
+#### 3.1.3 account dump_key 钱包地址私钥导出
 cli account dump_key -a "需要导出的账户地址"
 
 	[lyn@localhost build]$ ./chain33-cli account dump_key -a 1RackwdGHK5CzdP8oytmRvdb5EGQP3YUX
 	{
 	    "replystr": "0x1a8ba8d001fe0a11b02622297ab599f7a1c1116e272ad759d602c7ba708c55d4"
 	}
-####3.1.4 account import_key 钱包地址私钥导入
+#### 3.1.4 account import_key 钱包地址私钥导入
 cli account import_key -k "外部私钥" -l "地址标签"
 
 	[lyn@localhost build]$ ./chain33-cli account import_key -k "0xa830cd3b4b4b236153c9b67bc161076f0e43eb002fec71e283c0ee0d1f644623" -l test
@@ -337,7 +337,7 @@ cli account import_key -k "外部私钥" -l "地址标签"
 	    },
 	    "label": "test"
 	}
-####3.1.5 account list 获取账户列表
+#### 3.1.5 account list 获取账户列表
 cli account list
 
 	[lyn@localhost build]$ ./chain33-cli account list
@@ -361,7 +361,7 @@ cli account list
 	        }
 	    ]
 	}
-####3.1.6 account set_label 设置账户地址标签名
+#### 3.1.6 account set_label 设置账户地址标签名
 cli account set_label -a "账户地址" -l "地址表签名"
 
 	[lyn@localhost build]$ ./chain33-cli account set_label -a 183BMp5Qcjx52e5yGERGs97DPCioChW7gj -l test1
@@ -375,7 +375,7 @@ cli account set_label -a "账户地址" -l "地址表签名"
 	}
 
 
-###3.2 block
+### 3.2 block
 Get block header or body info
 
 	Usage:
@@ -391,7 +391,7 @@ Get block header or body info
 	  sequences     Get block sequences between [start, end]
 	  view          View block info by block hash
 	
-####3.2.1 block get 获取指定区块高度区间的区块详细信息
+#### 3.2.1 block get 获取指定区块高度区间的区块详细信息
 cli block get -s "起始查询高度" -e "结束查询高度" -d "是否选择显示详情"(可选)
 
 	Usage:
@@ -443,7 +443,7 @@ cli block get -s "起始查询高度" -e "结束查询高度" -d "是否选择�
 	}
 
 
-####3.2.2 block hash 获取指定区块高度的区块哈希
+#### 3.2.2 block hash 获取指定区块高度的区块哈希
 cli block hash -t {区块高度}
 
 	Usage:
@@ -461,7 +461,7 @@ cli block hash -t {区块高度}
         "hash": "0x09055102ecb36033adde0fc9c0d523500c1d81693e7ad12181cfc2497b407da9"
     }
 
-####3.2.3 block headers 获取指定区块高度区间内的区块头信息
+#### 3.2.3 block headers 获取指定区块高度区间内的区块头信息
 cli block headers -s 起始查询高度 -e 结束查询高度
 
 	Usage:
@@ -495,7 +495,7 @@ cli block headers -s 起始查询高度 -e 结束查询高度
 
 ※ cli命令中有-d的可选参数项，但无实际作用。可省略。
 
-####3.2.4 block last_header 获取本钱包当前已同步的最新区块的区块头信息
+#### 3.2.4 block last_header 获取本钱包当前已同步的最新区块的区块头信息
 cli block last_header
 
 	[lyn@localhost build]$ ./chain33-cli block last_header
@@ -511,7 +511,7 @@ cli block last_header
 	    "difficulty": 0
 	}
 
-####3.2.5 block last_sequence 获取本钱包当前已同步的最新顺序编号
+#### 3.2.5 block last_sequence 获取本钱包当前已同步的最新顺序编号
 cli block last_sequence
 
 	[lyn@localhost build]$ ./chain33-cli block last_sequence
@@ -519,7 +519,7 @@ cli block last_sequence
 
 ※ sequence是否开启的配置项在配置文件中，默认应为关闭，返回为0。
 
-####3.2.6 block query_hashs 根据区块哈希获取区块详情
+#### 3.2.6 block query_hashs 根据区块哈希获取区块详情
 cli block query_hashs "哈希1" "哈希2"
 
 	[lyn@localhost build]$ ./chain33-cli block query_hashs -s 0x08bcf1957beb722ca874d46f7f7e35b4dea032ac4c0bd519c2eee214e1661284
@@ -539,7 +539,7 @@ cli block query_hashs "哈希1" "哈希2"
 	}
 
 
-####3.2.7 block sequences 根据顺序编号查询对应的区块哈希（仅用于平行链相关）
+#### 3.2.7 block sequences 根据顺序编号查询对应的区块哈希（仅用于平行链相关）
 cli block sequences -s "起始查询高度" -e "结束查询高度"
 
 	[lyn@localhost build]$ ./chain33-cli block sequences -s 0 -e 1
@@ -552,7 +552,7 @@ cli block sequences -s "起始查询高度" -e "结束查询高度"
 	    ]
 	}
 
-####3.2.8 block view 根据区块哈希查询指定区块的区块头信息
+#### 3.2.8 block view 根据区块哈希查询指定区块的区块头信息
 cli block view -s 区块哈希
 
 	[lyn@localhost build]$ ./chain33-cli block view -s 0xeab471cf4957253ac991bc56744ef7ae9a6b249236e97db2c5c4d998d3e787f2
@@ -573,7 +573,6 @@ cli block view -s 区块哈希
 	        "0x22849a81d554b4f914d7d65c1080d8cc98e5d1de0fd2be4f0db34b439c6a0173"
 	    ]
 	}
-###
 
 ### 3.3 bty
 Construct BTY transactions
