@@ -4,18 +4,27 @@ Cli模块通过RPC接口，直接调用chain33内部的接口实现系统服务�
 
 ## 2. 逻辑架构及上下文
 ### 2.1 模块关系图
-* chain33中的位置
+* Cli模块与Chain33的交互
+![](https://i.imgur.com/SxrfHMB.jpg)
+
+1、根据输入的指令的不同，调用相的Rpc接口
+
+2、Rpc模块在接收到rpc请求之后，会通过设置topic将消息发送到指定的模块
+
+3、各个模块处理完毕之后，将结果返回给rpc模块
+
+4、最终rpc模块根据响应中的信息，构造成cli需要的结构并返回。
 
 ### 2.2 处理逻辑
 #### 2.2.1 指令的创建
-chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所有指令集统一的入口。
+chain33中使用的cobra进行指令集的创建，rootCmd是所有指令集统一的入口。
 
 	var rootCmd = &cobra.Command{
 		Use:   "chain33-cli",
 		Short: "chain33 client tools",
 	}
 
- 在编码Chain33使用的指令集时，主要使用cobra.Command结构体中的两个元素：commands 和flags
+ rootCmd涉及cobra.Command结构体中的两个元素：commands 和flags
 
 	type Command struct {
 		...	
@@ -32,156 +41,207 @@ chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所�
  * commands：表示要执行的动作或指令，而每一个指令又可以包含子命令。
  * flags： 指令可以执行的动作或者过滤条件
 
->  commands是通过AddCommand将子指令集添加到rootCmd中的：
->  
->  命令添加到rootCmd中
->
-	rootCmd.AddCommand(
-		commands.AccountCmd(),
-		commands.BlockCmd(),
-		commands.BTYCmd(),
-		commands.CoinsCmd(),
-		...
-	)
+ commands通过AddCommand添加:
 
-> 操作指令添加到各个命令中:
->
-	cmd.AddCommand(
-		DumpKeyCmd(),
-		GetAccountListCmd(),
-		GetBalanceCmd(),
-		ImportKeyCmd(),
-		NewAccountCmd(),
-		SetLabelCmd(),
-	)
-}
-
-> flags 是在实现子命令时，通过Flags设置的。比如[block header](#323-block)中的flag, 并用MarkFlagRequired()函数来将flag设置为必填。
->
-	func addBlockHeaderFlags(cmd *cobra.Command) {
-		cmd.Flags().Int64P("start", "s", 0, "block start height")
-		cmd.MarkFlagRequired("start")
-		cmd.Flags().Int64P("end", "e", 0, "block end height")
-		cmd.MarkFlagRequired("end")
-		cmd.Flags().StringP("detail", "d", "f", "whether print header detail info (0/f/false for No; 1/t/true for Yes)")
-	}
-
-#### 2.2.2 指令的注册
-执行指令实际上是调用chain33内部已经注册好的一些接口函数。例如block last_header命令中最终调用的是chain33内部的GetLastHeader()函数
-
-	func lastHeader(cmd *cobra.Command, args []string) {
-		rpcLaddr, _ := cmd.Flags().GetString("rpc_laddr")
-		var res jsonrpc.Header
-		ctx := NewRpcCtx(rpcLaddr, "Chain33.GetLastHeader", nil, &res)
-		ctx.Run()
-	}
-
-
-1. 这些供外部组件使用的接口函数同意声明在types/proto目录下的rpc.proto文件中
-
-		service chain33 {
-		    // chain33 对外提供服务的接口
-		    //区块链接口
-		    rpc GetBlocks(ReqBlocks) returns (Reply) {}
-		    //获取最新的区块头
-		    rpc GetLastHeader(ReqNil) returns (Header) {}
-		    //交易接口
-		    rpc CreateRawTransaction(CreateTx) returns (UnsignTx) {}
-		    rpc CreateRawTxGroup(CreateTransactionGroup) returns (UnsignTx) {}
-		    //发送签名后交易
-		    rpc SendRawTransaction(SignedTx) returns (Reply) {}
-		    // 根据哈希查询交易
-		    rpc QueryTransaction(ReqHash) returns (TransactionDetail) {}
-		    // 发送交易
-		    rpc SendTransaction(Transaction) returns (Reply) {}
-		
-		    //通过地址获取交易信息
-		    rpc GetTransactionByAddr(ReqAddr) returns (ReplyTxInfos) {}
-		
-		    //通过哈希数组获取对应的交易
-		    rpc GetTransactionByHashes(ReqHashes) returns (TransactionDetails) {}
-		
-		    //缓存接口
-		    rpc GetMemPool(ReqNil) returns (ReplyTxList) {}
-		
-		    ...
-		}
-
-* client/queueprotocolapi.go文件中进行实现
-
-		type QueueProtocolAPI interface {
+	// AddCommand adds one or more commands to this parent command.
+	func (c *Command) AddCommand(cmds ...*Command) {
+		for i, x := range cmds {
 			...
-			// types.EventGetLastHeader
-			GetLastHeader() (*types.Header, error)
+			c.commands = append(c.commands, x)
 			...
 		}
-		...
+	}
+
+ flags 通过AddFlag设置：
+
+	// AddFlag will add the flag to the FlagSet
+	func (f *FlagSet) AddFlag(flag *Flag) {
+	}
+
+ 可以通过MarkFlagRequired将flag设置为必填项：
+
+	func (c *Command) MarkFlagRequired(name string) error {
+		return MarkFlagRequired(c.Flags(), name)
+	}
+
+#### 2.2.2 指令的调用
+
+	type RpcCtx struct {
+		Addr   string			// 对端rpc地址
+		Method string			// 调用函数
+		Params interface{}		// 入参
+		Res    interface{}		// 响应
+		cb     Callback			// 回调函数
+	}
+
+RpcCtx的创建
+
+	func NewRpcCtx(laddr, method string, params, res interface{}) *RpcCtx {
+		return &RpcCtx{
+			Addr:   laddr,
+			Method: method,
+			Params: params,
+			Res:    res,
+		}
+	}
+
+RpcCtx的执行
+
+	func (c *RpcCtx) Run() {
+		result, err := c.RunResult()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		data, err := json.MarshalIndent(result, "", "    ")
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		fmt.Println(string(data))
+	}
+
+
+#### 2.2.3 指令的注册
+chain33目前支持的rpc接口
+
+	type QueueProtocolAPI interface {
+		Version() (*types.Reply, error)
+		Close()
+		NewMessage(topic string, msgid int64, data interface{}) queue.Message
+		Notify(topic string, ty int64, data interface{}) (queue.Message, error)
+		// +++++++++++++++ mempool interfaces begin
+		// 同步发送交易信息到指定模块，获取应答消息 types.EventTx
+		SendTx(param *types.Transaction) (*types.Reply, error)
+		// types.EventTxList
+		GetTxList(param *types.TxHashList) (*types.ReplyTxList, error)
+		// types.EventGetMempool
+		GetMempool() (*types.ReplyTxList, error)
+		// types.EventGetLastMempool
+		GetLastMempool() (*types.ReplyTxList, error)
+		// +++++++++++++++ execs interfaces begin
+		// types.EventBlockChainQuery
+		Query(driver, funcname string, param types.Message) (types.Message, error)
+		QueryConsensus(param *types.ChainExecutor) (types.Message, error)
+		QueryConsensusFunc(driver string, funcname string, param types.Message) (types.Message, error)
+		QueryChain(param *types.ChainExecutor) (types.Message, error)
+		ExecWalletFunc(driver string, funcname string, param types.Message) (types.Message, error)
+		ExecWallet(param *types.ChainExecutor) (types.Message, error)
+		// --------------- execs interfaces end
 	
-		func (q *QueueProtocol) GetLastHeader() (*types.Header, error) {
-			msg, err := q.query(blockchainKey, types.EventGetLastHeader, &types.ReqNil{})
-			if err != nil {
-				log.Error("GetLastHeader", "Error", err.Error())
-				return nil, err
-			}
-			if reply, ok := msg.GetData().(*types.Header); ok {
-				return reply, nil
-			}
-			err = types.ErrTypeAsset
-			log.Error("GetLastHeader", "Error", err.Error())
-			return nil, err
+		// +++++++++++++++ p2p interfaces begin
+		// types.EventPeerInfo
+		PeerInfo() (*types.PeerList, error)
+		// types.EventGetNetInfo
+		GetNetInfo() (*types.NodeNetInfo, error)
+		// --------------- p2p interfaces end
+		// +++++++++++++++ wallet interfaces begin
+		// types.EventLocalGet
+		LocalGet(param *types.LocalDBGet) (*types.LocalReplyValue, error)
+		// types.EventLocalList
+		LocalList(param *types.LocalDBList) (*types.LocalReplyValue, error)
+		// types.EventWalletGetAccountList
+		WalletGetAccountList(req *types.ReqAccountList) (*types.WalletAccounts, error)
+		// types.EventNewAccount
+		NewAccount(param *types.ReqNewAccount) (*types.WalletAccount, error)
+		// types.EventWalletTransactionList
+		WalletTransactionList(param *types.ReqWalletTransactionList) (*types.WalletTxDetails, error)
+		// types.EventWalletImportprivkey
+		WalletImportprivkey(param *types.ReqWalletImportPrivkey) (*types.WalletAccount, error)
+		// types.EventWalletSendToAddress
+		WalletSendToAddress(param *types.ReqWalletSendToAddress) (*types.ReplyHash, error)
+		// types.EventWalletSetFee
+		WalletSetFee(param *types.ReqWalletSetFee) (*types.Reply, error)
+		// types.EventWalletSetLabel
+		WalletSetLabel(param *types.ReqWalletSetLabel) (*types.WalletAccount, error)
+		// types.EventWalletMergeBalance
+		WalletMergeBalance(param *types.ReqWalletMergeBalance) (*types.ReplyHashes, error)
+		// types.EventWalletSetPasswd
+		WalletSetPasswd(param *types.ReqWalletSetPasswd) (*types.Reply, error)
+		// types.EventWalletLock
+		WalletLock() (*types.Reply, error)
+		// types.EventWalletUnLock
+		WalletUnLock(param *types.WalletUnLock) (*types.Reply, error)
+		// types.EventGenSeed
+		GenSeed(param *types.GenSeedLang) (*types.ReplySeed, error)
+		// types.EventSaveSeed
+		SaveSeed(param *types.SaveSeedByPw) (*types.Reply, error)
+		// types.EventGetSeed
+		GetSeed(param *types.GetSeedByPw) (*types.ReplySeed, error)
+		// types.EventGetWalletStatus
+		GetWalletStatus() (*types.WalletStatus, error)
+		// types.EventDumpPrivkey
+		DumpPrivkey(param *types.ReqString) (*types.ReplyString, error)
+		// types.EventSignRawTx
+		SignRawTx(param *types.ReqSignRawTx) (*types.ReplySignRawTx, error)
+		GetFatalFailure() (*types.Int32, error)
+		// types.EventCreateTransaction 由服务器协助创建一个交易
+		WalletCreateTx(param *types.ReqCreateTransaction) (*types.Transaction, error)
+		// types.EventGetBlocks
+		GetBlocks(param *types.ReqBlocks) (*types.BlockDetails, error)
+		// types.EventQueryTx
+		QueryTx(param *types.ReqHash) (*types.TransactionDetail, error)
+		// types.EventGetTransactionByAddr
+		GetTransactionByAddr(param *types.ReqAddr) (*types.ReplyTxInfos, error)
+		// types.EventGetTransactionByHash
+		GetTransactionByHash(param *types.ReqHashes) (*types.TransactionDetails, error)
+		// types.EventGetHeaders
+		GetHeaders(param *types.ReqBlocks) (*types.Headers, error)
+		// types.EventGetBlockOverview
+		GetBlockOverview(param *types.ReqHash) (*types.BlockOverview, error)
+		// types.EventGetAddrOverview
+		GetAddrOverview(param *types.ReqAddr) (*types.AddrOverview, error)
+		// types.EventGetBlockHash
+		GetBlockHash(param *types.ReqInt) (*types.ReplyHash, error)
+		// types.EventIsSync
+		IsSync() (*types.Reply, error)
+		// types.EventIsNtpClockSync
+		IsNtpClockSync() (*types.Reply, error)
+		// types.EventGetLastHeader
+		GetLastHeader() (*types.Header, error)
+	
+		//types.EventGetLastBlockSequence:
+		GetLastBlockSequence() (*types.Int64, error)
+		//types.EventGetBlockSequences:
+		GetBlockSequences(param *types.ReqBlocks) (*types.BlockSequences, error)
+		//types.EventGetBlockByHashes:
+		GetBlockByHashes(param *types.ReqHashes) (*types.BlockDetails, error)
+	
+		// --------------- blockchain interfaces end
+	
+		// +++++++++++++++ store interfaces begin
+		StoreGet(*types.StoreGet) (*types.StoreReplyValue, error)
+		StoreGetTotalCoins(*types.IterateRangeByStateHash) (*types.ReplyGetTotalCoins, error)
+		// --------------- store interfaces end
+	
+		// +++++++++++++++ other interfaces begin
+		// close chain33
+		CloseQueue() (*types.Reply, error)
+		// --------------- other interfaces end
+	}
+
+* rpc服务注册:
+
+JsonRPC服务注册：
+
+	func (server *Server) RegisterName(name string, rcvr interface{}) error {
+		return server.register(rcvr, name, true)
+	}
+
+gRPC服务注册：
+
+	func (s *Server) RegisterService(sd *ServiceDesc, ss interface{}) {
+		ht := reflect.TypeOf(sd.HandlerType).Elem()
+		st := reflect.TypeOf(ss)
+		if !st.Implements(ht) {
+			grpclog.Fatalf("grpc: Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
 		}
+		s.register(sd, ss)
+	}
 
-* 启动进程初始化grpc和jsonrpc的时侯，注册到消息队列中。
-
-	JsonRPC注册：
-
-		func NewJSONRPCServer(c queue.Client) *JSONRPCServer {
-			j := &JSONRPCServer{}
-			j.jrpc.cli.Init(c)
-			server := rpc.NewServer()
-			j.s = server
-			server.RegisterName("Chain33", &j.jrpc)
-			return j
-		}
-
-	gRPC注册：
-
-		func NewGRpcServer(c queue.Client) *Grpcserver {
-			s := &Grpcserver{}
-			s.grpc.cli.Init(c)
-			var opts []grpc.ServerOption
-			//register interceptor
-			//var interceptor grpc.UnaryServerInterceptor
-			interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				if err := auth(ctx, info); err != nil {
-					return nil, err
-				}
-				// Continue processing the request
-				return handler(ctx, req)
-			}
-			opts = append(opts, grpc.UnaryInterceptor(interceptor))
-			server := grpc.NewServer(opts...)
-			s.s = server
-			types.RegisterChain33Server(server, &s.grpc)
-			return s
-		}
-
-* 初始化完成之后，则开始监听客户端的连接
-
-		func (r *RPC) SetQueueClient(c queue.Client) {
-			gapi := NewGRpcServer(c)
-			japi := NewJSONRPCServer(c)
-			r.gapi = gapi
-			r.japi = japi
-			r.c = c
-			//注册系统rpc
-			pluginmgr.AddRPC(r)
-			go gapi.Listen()
-			go japi.Listen()
-		}
 
 #### 2.2.3 指令的处理
-目前Chain33中命令集在接收响应时均使用的json编码，所以针对jsonRPC看下Server是如何处理命令集的rpc请求的。
+jRpc的处理：
 
 	func (j *JSONRPCServer) Listen() {
 		...
@@ -203,71 +263,6 @@ chain33中使用的cobra进行指令集的创建，此处声明的rootCmd是所�
 	
 		handler = co.Handler(handler)
 		http.Serve(listener, handler)
-	}
-
-http.Serve中，每accept一个连接就会创建一个goroutine去处理。
-
-	func (srv *Server) Serve(l net.Listener) error {
-		...
-		for {
-			rw, e := l.Accept()
-			...
-			c := srv.newConn(rw)
-			c.setState(c.rwc, StateNew) // before Serve can return
-			go c.serve(ctx)
-		}
-	}
-
-在创建的协程 中会通过ServeHTTP调用上文中传入的handler。
-
-	func (c *conn) serve(ctx context.Context) {
-		...
-		for {
-			w, err := c.readRequest(ctx)
-			...
-			serverHandler{c.server}.ServeHTTP(w, w.req)
-			...
-		}
-	}
-
-handler的ServeRequest函数中，从接收到的请求中解码出需要调用的rpc函数进行调用
-
-	func (server *Server) readRequest(codec ServerCodec) (service *service, mtype *methodType, req *Request, argv, replyv reflect.Value, keepReading bool, err error) {
-		service, mtype, req, keepReading, err = server.readRequestHeader(codec)
-		if err != nil {
-			if !keepReading {
-				return
-			}
-			// discard body
-			codec.ReadRequestBody(nil)
-			return
-		}
-	
-		// Decode the argument value.
-		argIsValue := false // if true, need to indirect before calling.
-		if mtype.ArgType.Kind() == reflect.Ptr {
-			argv = reflect.New(mtype.ArgType.Elem())
-		} else {
-			argv = reflect.New(mtype.ArgType)
-			argIsValue = true
-		}
-		// argv guaranteed to be a pointer now.
-		if err = codec.ReadRequestBody(argv.Interface()); err != nil {
-			return
-		}
-		if argIsValue {
-			argv = argv.Elem()
-		}
-	
-		replyv = reflect.New(mtype.ReplyType.Elem())
-	
-		switch mtype.ReplyType.Elem().Kind() {
-		case reflect.Map:
-			replyv.Elem().Set(reflect.MakeMap(mtype.ReplyType.Elem()))
-		case reflect.Slice:
-			replyv.Elem().Set(reflect.MakeSlice(mtype.ReplyType.Elem(), 0, 0))
-		}
-		return
 	}
 
 
@@ -828,11 +823,209 @@ cli seed save -s "以空格分隔的seed(15个字符或单词)" -p "加密seed�
 	    "msg": ""
 	}
 
-### 3.8 send	
+### 3.8 send
+cli send bty transfer -a "转账额度" -n "备注信息" -t "接收方地址" -k "私钥/发送方地址"
+
+	[lyn@localhost build]$ ./chain33-cli send bty transfer -a "1000" -n "transfer tx" -t "1LBKc8mA7s57sVoij6AhL7CG6pS3TFkqBu" -k "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	0x037513739705f899d92add16b3bbcc077076d81e20074b61ca7b391875514480
 
 ### 3.9 stat
+Coin statistic
+
+	Usage:
+	  chain33-cli stat [command]
+	
+	Available Commands:
+	  miner            Get miner statistic
+	  ticket_info      Get ticket info by ticket_id
+	  ticket_info_list Get ticket info list by ticket_id
+	  ticket_stat      Get ticket statistics by addr
+	  total_coins      Get total amount of a token (default: bty of current height)
+
+#### 3.9.1 
+cli stat miner 
 
 ### 3.10 tx
+Transaction management
+
+Usage:
+  chain33-cli tx [command]
+
+Available Commands:
+  addr_overview View transactions of address
+  decode        Decode a hex format transaction
+  get_hex       Get transaction hex by hash
+  query         Query transaction by hash
+  query_addr    Query transaction by account address
+  query_hash    Get transactions by hashes
+
+#### 3.10.1 addr_overview 查询指定地址在coins合约下的相关交易
+cli tx addr_overview -a "账户地址"
+	
+	[azrael@localhost build]$ ./chain33-cli tx addr_overview  -a 1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc
+	{
+	    "receiver": "1000.0000",
+	    "balance": "100.9960",
+	    "txCount": 5
+	}
+	
+#### 3.10.2 decode 对交易字符串进行解析
+cli tx decode -d "需要解析的交易信息"
+
+	[azrael@localhost build]$ ./chain33-cli tx decode -d 0a05636f696e7312121803220e1080d0dbc3f4022205636f696e7320a08d0630eaceade1e389c1a5293a22314761485970576d71414a7371527772706f4e6342385676674b7453776a63487174
+	{
+	    "execer": "coins",
+	    "payload": {
+	        "withdraw": {
+	            "cointoken": "",
+	            "amount": "100000000000",
+	            "note": "",
+	            "execName": "coins",
+	            "to": ""
+	        },
+	        "ty": 3
+	    },
+	    "rawpayload": "0x1803220e1080d0dbc3f4022205636f696e73",
+	    "signature": {
+	        "ty": 0,
+	        "pubkey": "",
+	        "signature": ""
+	    },
+	    "fee": "0.0010",
+	    "expire": 0,
+	    "nonce": 2975476712871782250,
+	    "to": "1GaHYpWmqAJsqRwrpoNcB8VvgKtSwjcHqt",
+	    "from": "1HT7xU2Ngenf7D4yocz2SAcnNLW7rK8d4E"
+	}
+
+#### 3.10.3 get_hex 根据交易获取十六进制字符串
+cli tx get_hex -s "交易哈希"
+
+	[azrael@localhost build]$ ./chain33-cli tx get_hex -s 0x57fbde79b74a0c3286ca5947c05a5b95efd14f1411669bedabae1c68390237a3
+	0a05636f696e73122f18010a2b1080b081daaf14222231456345316e7a77527a687255555679396b3278444d48356b773962796d634a50631a6e0801122102504fa1c28caaf1d5a20fefb87c50a49724ff401043420cb3ba271997eb5a43871a47304502210081d32f66581903960f5fedc79ad742f43a4198209b766e1d5e6668288c3a9bc9022062bb2aa67c5db22aff68cc179fd7af7aad92b7f8cfd634857ff9b77c9c97d86320a08d062887e789df05309bd0b0d793f4cfca6f3a2231456345316e7a77527a687255555679396b3278444d48356b773962796d634a5063
+
+#### 3.10.4 query 根据交易哈希获取交易详情
+cli tx query -s "交易哈希" 
+
+	[azrael@localhost build]$ ./chain33-cli  tx query -s 0x57fbde79b74a0c3286ca5947c05a5b95efd14f1411669bedabae1c68390237a3
+	{
+	    "tx": {
+	        "execer": "coins",
+	        "payload": {
+	            "transfer": {
+	                "cointoken": "",
+	                "amount": "700000000000",
+	                "note": "",
+	                "to": "1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc"
+	            },
+	            "ty": 1
+	        },
+	        "rawpayload": "0x18010a2b1080b081daaf14222231456345316e7a77527a687255555679396b3278444d48356b773962796d634a5063",
+	        "signature": {
+	            "ty": 1,
+	            "pubkey": "0x02504fa1c28caaf1d5a20fefb87c50a49724ff401043420cb3ba271997eb5a4387",
+	            "signature": "0x304502210081d32f66581903960f5fedc79ad742f43a4198209b766e1d5e6668288c3a9bc9022062bb2aa67c5db22aff68cc179fd7af7aad92b7f8cfd634857ff9b77c9c97d863"
+	        },
+	        "fee": "0.0010",
+	        "expire": 1541567367,
+	        "nonce": 8040402671450728475,
+	        "to": "1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc",
+	        "from": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	    },
+	    "receipt": {
+	        "ty": 2,
+	        "tyName": "ExecOk",
+	        "logs": [
+	            {
+	                "ty": 2,
+	                "tyName": "LogFee",
+	                "log": {
+	                    "prev": {
+	                        "currency": 0,
+	                        "balance": "9999699999700000",
+	                        "frozen": "0",
+	                        "addr": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	                    },
+	                    "current": {
+	                        "currency": 0,
+	                        "balance": "9999699999600000",
+	                        "frozen": "0",
+	                        "addr": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	                    }
+	                },
+	                "rawLog": "0x0a2d10a0e8deb2c9d5e111222231344b454b6259744b4b516d34774d7468534b394a344c61346e41696964476f7a74122d1080dbd8b2c9d5e111222231344b454b6259744b4b516d34774d7468534b394a344c61346e41696964476f7a74"
+	            },
+	            {
+	                "ty": 3,
+	                "tyName": "LogTransfer",
+	                "log": {
+	                    "prev": {
+	                        "currency": 0,
+	                        "balance": "9999699999600000",
+	                        "frozen": "0",
+	                        "addr": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	                    },
+	                    "current": {
+	                        "currency": 0,
+	                        "balance": "9998999999600000",
+	                        "frozen": "0",
+	                        "addr": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+	                    }
+	                },
+	                "rawLog": "0x0a2d1080dbd8b2c9d5e111222231344b454b6259744b4b516d34774d7468534b394a344c61346e41696964476f7a74122d1080abd7d899c1e111222231344b454b6259744b4b516d34774d7468534b394a344c61346e41696964476f7a74"
+	            },
+	            {
+	                "ty": 3,
+	                "tyName": "LogTransfer",
+	                "log": {
+	                    "prev": {
+	                        "currency": 0,
+	                        "balance": "300000000000",
+	                        "frozen": "0",
+	                        "addr": "1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc"
+	                    },
+	                    "current": {
+	                        "currency": 0,
+	                        "balance": "1000000000000",
+	                        "frozen": "0",
+	                        "addr": "1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc"
+	                    }
+	                },
+	                "rawLog": "0x0a2b1080f092cbdd08222231456345316e7a77527a687255555679396b3278444d48356b773962796d634a5063122b1080a094a58d1d222231456345316e7a77527a687255555679396b3278444d48356b773962796d634a5063"
+	            }
+	        ]
+	    },
+	    "height": 38,
+	    "index": 0,
+	    "blocktime": 1541567247,
+	    "amount": "7000.0000",
+	    "fromaddr": "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt",
+	    "actionname": "transfer"
+	}
+
+
+#### 3.10.5 query_addr 根据账户地址获取交易列表
+cli tx query_addr -a "账户地址" -t "区块高度" -c "最大返回条数" -d "查询方式" -f "交易类型" 
+
+	[azrael@localhost build]$  ./chain33-cli  tx query_addr -a 1EcE1nzwRzhrUUVy9k2xDMH5kw9bymcJPc -t 36 -c 1 -d 0 -f 0
+	{
+	    "txInfos": [
+	        {
+	            "hash": "0x79811df8d4ea2fabc1a14e57e48014d71a95dcca34b336e44318920445886862",
+	            "height": 35,
+	            "index": 0,
+	            "assets": [
+	                {
+	                    "exec": "coins",
+	                    "symbol": "BTY"
+	                }
+	            ]
+	        }
+	    ]
+	}
+
+#### 3.10.6 query_hash 根据交易哈希（组）获取交易详情
+cli tx query_hash -s "交易哈希" "交易哈希" "交易哈希" ...
 
 ### 3.11 version
 Version info
