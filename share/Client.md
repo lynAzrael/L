@@ -1,10 +1,14 @@
 # Client模块
 ## 1. 模块介绍
-Cli模块通过RPC接口，直接调用chain33内部的接口实现系统服务。RPC是通过提供一系列协议方式，对外部应用提供各种系统服务的，在chain33中主要采用了用protobuf定义协议的grpc服务和用json定义协议的jsonrpc服务，分别为不同的前端应用提供相同的系统服务。可以简单的将Cli模块理解成一个前端应用。
+Cli模块可以通过RPC接口直接调用chain33内已实现的服务，可以简单的将Cli模块理解成一个前端应用。
+
+RPC是通过提供一系列协议方式，对外部应用提供各种系统服务的，在chain33中主要采用了用protobuf定义协议的grpc服务和用json定义协议的jsonrpc服务，分别为不同的前端应用提供相同的系统服务。
+
+
 
 ## 2. 逻辑架构及上下文
-### 2.1 模块关系图
-* Cli模块与Chain33的交互
+### 2.1 Cli模块与Chain33的关系
+#### 2.1.1 Cli模块与Chain33的交互
 ![](https://i.imgur.com/SxrfHMB.jpg)
 
 1、根据输入的指令的不同，调用相的Rpc接口
@@ -16,7 +20,7 @@ Cli模块通过RPC接口，直接调用chain33内部的接口实现系统服务�
 4、最终rpc模块根据响应中的信息，构造成cli需要的结构并返回。
 
 ### 2.2 处理逻辑
-#### 2.2.1 指令的创建
+#### 2.2.1 指令的添加
 chain33中使用的cobra进行指令集的创建，rootCmd是所有指令集统一的入口。
 
 	var rootCmd = &cobra.Command{
@@ -102,7 +106,7 @@ RpcCtx的执行
 	}
 
 
-#### 2.2.3 指令的注册
+#### 2.2.3 指令处理逻辑
 chain33目前支持的rpc接口
 
 	type QueueProtocolAPI interface {
@@ -220,51 +224,184 @@ chain33目前支持的rpc接口
 		// --------------- other interfaces end
 	}
 
-* rpc服务注册:
+服务初始化：
 
-JsonRPC服务注册：
-
-	func (server *Server) RegisterName(name string, rcvr interface{}) error {
-		return server.register(rcvr, name, true)
-	}
-
-gRPC服务注册：
-
-	func (s *Server) RegisterService(sd *ServiceDesc, ss interface{}) {
-		ht := reflect.TypeOf(sd.HandlerType).Elem()
-		st := reflect.TypeOf(ss)
-		if !st.Implements(ht) {
-			grpclog.Fatalf("grpc: Server.RegisterService found the handler of type %v that does not satisfy %v", st, ht)
+	func New(client queue.Client, option *QueueProtocolOption) (QueueProtocolAPI, error) {
+		if client == nil {
+			return nil, types.ErrInvalidParam
 		}
-		s.register(sd, ss)
+		q := &QueueProtocol{}
+		q.client = client
+		if option != nil {
+			q.option = *option
+		} else {
+			q.option.SendTimeout = 600 * time.Second
+			q.option.WaitTimeout = 600 * time.Second
+		}
+		return q, nil
 	}
 
+等待响应：
 
-#### 2.2.3 指令的处理
-jRpc的处理：
+	func (q *QueueProtocol) query(topic string, ty int64, data interface{}) (queue.Message, error) {
+		client := q.client
+		msg := client.NewMessage(topic, ty, data)
+		err := client.SendTimeout(msg, true, q.option.SendTimeout)
+		if err != nil {
+			return queue.Message{}, err
+		}
+		return client.WaitTimeout(msg, q.option.WaitTimeout)
+	}
 
-	func (j *JSONRPCServer) Listen() {
-		...
-		var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			...
-				serverCodec := jsonrpc.NewServerCodec(&HTTPConn{in: ioutil.NopCloser(bytes.NewReader(data)), out: w, r: r})
-				w.Header().Set("Content-type", "application/json")
-				if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-					w.Header().Set("Content-Encoding", "gzip")
-				}
-				w.WriteHeader(200)
-				err = j.s.ServeRequest(serverCodec)
-				if err != nil {
-					log.Debug("Error while serving JSON request: %v", err)
-					return
-				}
-			}
-		})
+topic为各个模块注册到消息队列时使用的key值，定义如下：
+
+	const (
+		mempoolKey = "mempool" // 未打包交易池
+		p2pKey     = "p2p"     //
+		consensusKey = "consensus" // 共识系统
+		executorKey   = "execs"      // 交易执行器
+		walletKey     = "wallet"     // 钱包
+		blockchainKey = "blockchain" // 区块
+		storeKey      = "store"
+	)
+
+ty为事件的类型，定义如下：
+
+	// event
+	const (
+		EventTx                   = 1
+		EventGetBlocks            = 2
+		EventBlocks               = 3
+		EventGetBlockHeight       = 4
+		EventReplyBlockHeight     = 5
+		EventQueryTx              = 6
+		EventTransactionDetail    = 7
+		EventReply                = 8
+		EventTxBroadcast          = 9
+		EventPeerInfo             = 10
+		EventTxList               = 11
+		EventReplyTxList          = 12
+		EventAddBlock             = 13
+		EventBlockBroadcast       = 14
+		EventFetchBlocks          = 15
+		EventAddBlocks            = 16
+		EventTxHashList           = 17
+		EventTxHashListReply      = 18
+		EventGetHeaders           = 19
+		EventHeaders              = 20
+		EventGetMempoolSize       = 21
+		EventMempoolSize          = 22
+		EventStoreGet             = 23
+		EventStoreSet             = 24
+		EventStoreGetReply        = 25
+		EventStoreSetReply        = 26
+		EventReceipts             = 27
+		EventExecTxList           = 28
+		EventPeerList             = 29
+		EventGetLastHeader        = 30
+		EventHeader               = 31
+		EventAddBlockDetail       = 32
+		EventGetMempool           = 33
+		EventGetTransactionByAddr = 34
+		EventGetTransactionByHash = 35
+		EventReplyTxInfo          = 36
+		//wallet event
+		EventWalletGetAccountList  = 37
+		EventWalletAccountList     = 38
+		EventNewAccount            = 39
+		EventWalletAccount         = 40
+		EventWalletTransactionList = 41
+		EventWalletExecutor        = 42
+		EventWalletImportPrivkey   = 43
+		EventWalletSendToAddress   = 44
+		EventWalletSetFee          = 45
+		EventWalletSetLabel        = 46
+		EventStoreDel              = 47
+		EventWalletMergeBalance    = 48
+		EventReplyHashes           = 49
+		EventWalletSetPasswd       = 50
+		EventWalletLock            = 51
+		EventWalletUnLock          = 52
+		EventTransactionDetails    = 53
+		EventBroadcastAddBlock     = 54
+		EventGetBlockOverview      = 55
+		EventGetAddrOverview       = 56
+		EventReplyBlockOverview    = 57
+		EventReplyAddrOverview     = 58
+		EventGetBlockHash          = 59
+		EventBlockHash             = 60
+		EventGetLastMempool        = 61
+		EventMinerStart            = 63
+		EventMinerStop             = 64
+		EventWalletTickets         = 65
+		EventStoreMemSet           = 66
+		EventStoreRollback         = 67
+		EventStoreCommit           = 68
+		EventCheckBlock            = 69
+		//seed
+		EventGenSeed      = 70
+		EventReplyGenSeed = 71
+		EventSaveSeed     = 72
+		EventGetSeed      = 73
+		EventReplyGetSeed = 74
+		EventDelBlock     = 75
+		//local store
+		EventLocalGet            = 76
+		EventLocalReplyValue     = 77
+		EventLocalList           = 78
+		EventLocalSet            = 79
+		EventGetWalletStatus     = 80
+		EventCheckTx             = 81
+		EventReceiptCheckTx      = 82
+		EventReplyQuery          = 84
+		EventFetchBlockHeaders   = 86
+		EventAddBlockHeaders     = 87
+		EventReplyWalletStatus   = 89
+		EventGetLastBlock        = 90
+		EventBlock               = 91
+		EventGetTicketCount      = 92
+		EventReplyGetTicketCount = 93
+		EventDumpPrivkey         = 94
+		EventReplyPrivkey        = 95
+		EventIsSync              = 96
+		EventReplyIsSync         = 97
 	
-		handler = co.Handler(handler)
-		http.Serve(listener, handler)
-	}
-
+		EventCloseTickets            = 98
+		EventGetAddrTxs              = 99
+		EventReplyAddrTxs            = 100
+		EventIsNtpClockSync          = 101
+		EventReplyIsNtpClockSync     = 102
+		EventDelTxList               = 103
+		EventStoreGetTotalCoins      = 104
+		EventGetTotalCoinsReply      = 105
+		EventQueryTotalFee           = 106
+		EventSignRawTx               = 107
+		EventReplySignRawTx          = 108
+		EventSyncBlock               = 109
+		EventGetNetInfo              = 110
+		EventReplyNetInfo            = 111
+		EventErrToFront              = 112
+		EventFatalFailure            = 113
+		EventReplyFatalFailure       = 114
+		EventBindMiner               = 115
+		EventReplyBindMiner          = 116
+		EventDecodeRawTx             = 117
+		EventReplyDecodeRawTx        = 118
+		EventGetLastBlockSequence    = 119
+		EventReplyLastBlockSequence  = 120
+		EventGetBlockSequences       = 121
+		EventReplyBlockSequences     = 122
+		EventGetBlockByHashes        = 123
+		EventReplyBlockDetailsBySeqs = 124
+		EventDelParaChainBlockDetail = 125
+		EventAddParaChainBlockDetail = 126
+		EventGetSeqByHash            = 127
+		EventLocalPrefixCount        = 128
+		EventWalletCreateTx          = 129
+		//exec
+		EventBlockChainQuery = 212
+		EventConsensusQuery  = 213
+	)
 
 ## 3. 指令介绍
 
@@ -1148,10 +1285,6 @@ cli wallet unlock -p "密码" -t "持续时间" -s "解锁范围(默认解锁wal
 
 ---
 
-#RPC模块
-## 1. 模块介绍
-
-## 2. 
 ##4. 二次开发
 本章节将会以一个简单的例子来介绍Cli的二次开发过程，例子实现的功能比较简单，但包含了实现一个cli所需要的各方面的方法。
 
