@@ -12,6 +12,10 @@ int main() {
 	(void)insertNode(l, 7, 1);
 
 	showList(l);
+
+	(void)deleteNode(l, 6);
+
+	showList(l);
 	
 	return 0;
 }

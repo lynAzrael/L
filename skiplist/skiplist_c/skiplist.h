@@ -89,6 +89,30 @@ bool insertNode(list* l, int key, int level) {
 	return true;
 }
 
+bool deleteNode(list* l, int key) {
+	node * n;
+	for (int i = 0; i < l->level; i++) {
+		node* header = l->header;
+		node** current = &(l->header->forward[i]);
+
+		while (*current != NULL) {
+			if ((*current)->key < key) {
+				// skiplist是已经排过序的
+				current = &((*current)->forward[i]);				
+			} else if ((*current)->key == key) {
+				// 进行删除操作
+				n = *current;
+				*current = (*current)->forward[i];
+				break;
+			} else {
+				// 如果当前节点的key超过了需要删除的key，则说明要删除的节点不存在.
+				return true;
+			}
+		}
+	}
+	free(n);
+}
+
 void showList(list* l){
 	for (int i = MAX_LEVEL - 1; i >= 0 ;i--){
 		printf("In level %d...\n", i);
