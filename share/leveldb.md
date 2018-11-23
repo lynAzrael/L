@@ -6,16 +6,22 @@
 
 从图中可以看出，构成LevelDb静态结构的包括六个主要部分：内存中的MemTable和Immutable MemTable以及磁盘上的几种主要文件：Current文件，Manifest文件，log文件以及SSTable文件。当然，LevelDb除了这六个主要部分还有一些辅助的文件，但是以上六个文件和数据结构是LevelDb的主体构成元素。
 
-## 1.1 LSM（Log-structured merge tree)结构
-设计思想：将数据的修改增量地保存在内存中，并在达到一定大小之后批量写到磁盘上。
+## 1.1 设计思想
+LSM Tree(Log-structured merge tree): 结构将数据的修改增量地保存在内存中，并在达到一定大小之后批量写到磁盘上。
 
 这种结构是将更新的内容写入到一系列的更小的所有文件中。每个文件包含了一批在一段短时间内的变化，并在被写入前都被排序以便于稍微快速的检索。这些文件都是不变的；他们从来不更新。每次更新都写入新的文件。会检查所有文件来定期合并，以降低文件的数量。
 
 LSM本身由MemTable,Immutable MemTable,SSTable等多个部分组成，其中MemTable在内存，用于记录最近修改的数据，一般用跳跃表来组织。当MemTable达到一定大小后，将其冻结起来变成Immutable MemTable，然后开辟一个新的MemTable用来记录新的记录。而Immutable MemTable则等待转存到磁盘。
 
+### 1.1.1 Mem Table
 
 
 #### 1.1.1.2 Compaction操作(minor compaction)
+当Immutable MemTable中的数据达到了一定的大小之后，会将内容写到磁盘中。
+
+![minor compaction](https://github.com/lynAzrael/L/blob/master/share/img/leveldb_minor_compaction.png)
+
+immutable memtable其实是一个SkipList，其中的记录是根据key有序排列的，遍历key并依次写入一个level 0 的新建SSTable文件中，写完后建立文件的index 数据，这样就完成了一次minor compaction。从上图中也可以看到，删除操作并不是真正的删除记录(因为想要获取到这个key值对应的kv数据，需要比较复杂的查找，所以在minor compaction中不会真正的删除某个记录)，而是将delete操作作为一条记录写入到文件中。
 
 ```go
 go db.mCompaction()
@@ -92,8 +98,124 @@ SkipList不仅是维护有序数据的一个简单实现，而且相比较平衡
 
 ### SkipList的实现
 
-#### 结构定义
+skiplist结构
 
-```go
-	
+```c
+typedef struct skipList list;
+
+struct skipList {
+	int level;
+	node* header;
+};
 ``` 
+
+node结构
+
+```c
+typedef struct nodeStruct node;
+
+struct nodeStruct {
+	int key;
+	int level;
+	char value[128];
+	node* forward[MAX_LEVEL];
+};
+```
+
+skiplist创建
+
+```c
+list* CreateList() {
+	list* sl = (list*)malloc(sizeof(list));
+	sl->level = MAX_LEVEL - 1;
+
+	node* n = (node*)malloc(sizeof(node) + MAX_LEVEL * sizeof(node*));
+	sl->header = n;
+
+	for (int i = 0; i < MAX_LEVEL - 1; i++) {
+		sl->header->forward[i] = NULL;
+	}
+	return sl;
+}
+```
+
+插入节点
+```c
+bool insertNode(list* l, int key, int level) {
+	// 根据key值，创建一个node
+	node* n = (node*)malloc(sizeof(node) + level * sizeof(node*));
+	n->key = key;
+	n->level = level;
+
+	for (int i=0; i < level; i ++) {
+		n->forward[i] = NULL;
+	}
+
+	// 如果节点的level超过了链表的最大level， 则返回异常
+	if (n->level > l->level ) {
+		return false;
+	}
+	
+	for (int i = 0; i < n->level; i++) {
+		node* header = l->header;
+		node** current = &(l->header->forward[i]);
+		if (*current == NULL) {
+			*current = n;
+		} else {
+			while (*current != NULL && (*current)->key < n->key) {
+				current = &((*current)->forward[i]);
+			} 
+			if (*current == NULL){
+				*current = n;
+			} else if ((*current)->key > n->key) {
+				n->forward[i] = *current;
+				*current = n;
+			}
+		}
+	}
+	return true;
+}
+```
+
+删除节点
+```c
+bool deleteNode(list* l, int key) {
+	node * n;
+	for (int i = 0; i < l->level; i++) {
+		node* header = l->header;
+		node** current = &(l->header->forward[i]);
+
+		while (*current != NULL) {
+			if ((*current)->key < key) {
+				// skiplist是已经排过序的
+				current = &((*current)->forward[i]);				
+			} else if ((*current)->key == key) {
+				// 进行删除操作
+				n = *current;
+				*current = (*current)->forward[i];
+				break;
+			} else {
+				// 如果当前节点的key超过了需要删除的key，则说明要删除的节点不存在.
+				return true;
+			}
+		}
+	}
+	free(n);
+}
+```
+
+遍历list
+```c
+void showList(list* l){
+	for (int i = MAX_LEVEL - 1; i >= 0 ;i--){
+		printf("In level %d...\n", i);
+		node* n = l->header->forward[i];
+		printf("header");
+		while (n != NULL){
+			printf("\t->\t%d", n->key);
+			n = n->forward[i];
+		}
+		printf("\n");
+	}
+}
+```
