@@ -1,0 +1,17 @@
+hostname = lyn-Azrael
+ip = 192.168.3.61
+username = azrael
+password = 621101
+port = 22
+module = agent
+decompress_file = open-falcon-v0.2.1.tar.gz
+remote_dir = /opt/test
+
+hbs_addr = 192.168.3.61:6030
+tran_addr = 192.168.3.61:8433
+ 
+# =*>表示压缩传输
+# =>表示直接传输
+# 以/开头的表示绝对路径
+ 
+C:\Users\93232\Desktop\Ubuntu\file_monitor =*> /opt/test
