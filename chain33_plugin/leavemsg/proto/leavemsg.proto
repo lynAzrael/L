@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package types;
+
+message sendMsgParam {
+    string msg = 1;
+    string from = 2;
+    string to = 3;
+}
+
+message queryMsgParam {
+    string addr = 1;
+}
+
+message LeaveMsgAction {
+    oneof value {
+        sendMsgParam send = 1;
+        queryMsgParam query = 2;
+    }
+    int32 ty = 3;
+}
+
+message SendLog {
+    string msg = 1;
+    string echo = 2;
+    string from = 3;
+    string to = 4;
+}
+
+message queryMsgResult {
+    string msg = 1;
+    string from = 2;
+    string to = 3;
+}
+
