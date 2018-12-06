@@ -18,7 +18,7 @@
 
 
 ### 1.2 停止游戏
-![停止游戏(开奖)流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/StopRound.png)
+![停止游戏(开奖)流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/EndRound.png)
 
 停止游戏即进行开奖操作。
 
@@ -82,7 +82,7 @@ message RoundInfo {
 响应:
 ```bash
 {
-	[
+    [
 		{
 			"round":1,
 			"beginTime":1543994216,
@@ -110,8 +110,8 @@ message RoundInfo {
 ```bash
 {
 	"User":string,
-	"StartRound":int64,
-	"EndRound":int64
+    "StartRound":int64,
+    "EndRound":int64
 }
 ```
 |参数|类型|说明|
@@ -124,7 +124,7 @@ message RoundInfo {
 响应:
 ```bash
 {
-    [
+	[
         {
             "round":int64,
             "keyNum":int64,
@@ -149,43 +149,48 @@ message RoundInfo {
 
 ## 3 存储
 ### 3.1 StateDB存储
+|键|值|用途|说明|
+|-|-|-|-|
+|mavl-f3d-user-keys:{round}:{addr}|钥匙数量|记录用户在某一轮游戏中所持有的钥匙数量|参数为用户的地址以及需要查询轮次|
+|mavl-f3d-round-start|轮次开始|存储开始的轮次信息|
+|mavl-f3d-round-end|轮次结束|存储结束的轮次信息|
+|mavl-f3d-last-round|当前轮次|保存当前轮次||
+|mavl-f3d-key-price:{round}|钥匙价格|存储最后一把钥匙的价格|
 
 ### 3.2 LocalDB存储
+|键|值|用途|说明|
+|-|-|-|-|
+|LODB-f3d-round-info:{round}|RoundInfo|保存每一个轮次的游戏信息|
 
 ## 4 配置
 合约配置信息：
 
 ```toml
+[Addr]
 # 本游戏合约管理员地址
-f3d.manager = 14KEKbYtKKQm4wMthSK9J4La4nAiidGozt
-
+manager = "14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
 # 本游戏合约奖金池地址
-f3d.bonuspool = 12qyocayNF7Lv6C9qW4avxs2E7U41fKSfv
+bonuspool = "12qyocayNF7Lv6C9qW4avxs2E7U41fKSfv"
 
+[Bonus]
 # 超级大奖分成百分比
-f3d.bonus.winner = 40
-
+winner = 40
 # 参与者分红百分比
-f3d.bonus.key = 30
-
+keyowner = 30
 # 滚动到下期奖金池百分比
-f3d.bonus.pool = 20
-
+pool = 20
 # 平台运营及开发者费用百分比
-f3d.bonus.platform = 10
+platform = 10
 
+[Game]
 # 本游戏一轮运行的最长周期（单位：秒）
-f3d.time.life = 3600
-
+life = 3600
 # 一把钥匙延长的游戏时间（单位：秒）
-f3d.time.key = 30
-
+key = 30
 # 一次购买钥匙最多延长的游戏时间（单位：秒）
-f3d.time.maxkey = 300
-
+maxkey = 300
 # 没有玩家购买key时，一轮游戏缩短的时间（单位：秒）
-f3d.time.nouser = 30
-
+nouser = 30
 # 每次钥匙价格上浮的百分比
-f3d.key.increase = 10
+increase = 10
 ```
