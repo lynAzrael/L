@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package types;
+
+message RoundInfo {
+    // 游戏轮次
+    int64 round = 1;
+    // 本轮游戏开始事件
+    int64 beginTime = 2;
+    // 本轮游戏结束时间
+    int64 endTime = 3;
+    // 本轮游戏目前为止最后一把钥匙持有人（游戏开奖时，这个就是中奖人）
+    string lastOwner = 4;
+    // 最后一把钥匙的购买时间
+    int64 lastKeyTime = 5;
+    // 最后一把钥匙的价格
+    int64 lastKeyPrice = 6;
+    // 本轮游戏奖金池总额
+    int64 bonusPool = 7;
+    // 本轮游戏参与地址数
+    int64 userCount = 8;
+    // 本轮游戏募集到的key个数
+    int64 keyCount = 9;
+}
+
+message F3DGameAction {
+    oneof value {
+        StartGame start = 1;
+        StopGame stop = 2;
+        BuyKeys trade = 3;
+    }
+    int32 ty = 4;
+}
+
+message StartGame {
+    int64 lastRound = 1;
+}
+
+message StopGame {
+    int64 round = 1;
+}
+
+message BuyKeys {
+    int64 keyNum = 1;
+}
+
+message RoundInfo {
+    int64 currentRound = 1;
+}
