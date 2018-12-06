@@ -82,19 +82,19 @@ message RoundInfo {
 响应:
 ```bash
 {
-	[
-		{
-			"round":1,
-			"beginTime":1543994216,
-			...	
-		},
-		{
-			"round":2,
-			"beginTime":1543995384,
-			...
-		},
-		...
-	]
+    [
+        {
+            "round":1,
+            "beginTime":1543994216,
+            ...
+        },
+        {
+            "round":2,
+            "beginTime":1543995384,
+            ...
+        },
+        ...
+    ]
 }
 ```
 
@@ -109,9 +109,9 @@ message RoundInfo {
 
 ```bash
 {
-	"User":string,
-	"StartRound":int64,
-	"EndRound":int64
+    "User":string,
+    "StartRound":int64,
+    "EndRound":int64
 }
 ```
 |参数|类型|说明|
@@ -124,13 +124,13 @@ message RoundInfo {
 响应:
 ```bash
 {
-	[
-		{
-			"round":int64,
-			"keyNum":int64,
-			"bonus":int64
-		}
-	]
+    [
+        {
+            "round":int64,
+            "keyNum":int64,
+            "bonus":int64
+        }
+    ]
 }
 ```
 
