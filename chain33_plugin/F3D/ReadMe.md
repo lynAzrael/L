@@ -3,22 +3,31 @@
 ## 1 流程设计
 
 ### 1.1 创建游戏
+![创建游戏流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/StartRound.png)
+
 #### 1.1.1 首轮游戏的创建
 第一轮游戏是由管理员创建，可以通过调用StartGameRound接口实现。
 
->首轮是否需要在奖池放入一定额度的bty作为奖金？
+>1.首轮是否需要在奖池放入一定额度的bty作为奖金？
+>
+>2.配置信息是否只在首轮传入，一旦游戏启动，所有相关配置信息不可变？
+>
 
 #### 1.1.2 后续游戏的创建 
-后续的游戏均是在开奖完毕之后，自动调用StartGameRound接口进行创建。
+后续的游戏均是在开奖完毕之后，调用StartGameRound接口进行创建。
 
 
 ### 1.2 停止游戏
+![停止游戏(开奖)流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/StopRound.png)
+
 停止游戏即进行开奖操作。
 
-通过GetGameRounds获取轮次信息，通过lastOwner来获取中奖人的地址信息进行奖金的发放，如果该字段为空，则说明这一轮游戏没有玩家购买key。需要将一轮游戏的时间缩短，并将奖池中的全部奖金移入下一轮游戏。
+通过GetGameRounds获取轮次信息，从lastOwner中获取中奖人的地址信息进行奖金的发放，如果该字段为空，则说明这一轮游戏没有玩家购买key。需要将一轮游戏的时间缩短，并将奖池中的全部奖金移入下一轮游戏。
+
+>开奖规则：如果检测到上一区块的打包时间和本轮游戏中最后一个Key交易区块的打包时间间隔大于1小时，则触发开奖流程
 
 ### 1.3 玩家购票
-
+![玩家购票流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/BuyKeys.png)
 
 ### 1.4 信息查询
 
@@ -58,15 +67,20 @@ message RoundInfo {
 #### 2.3.1 GetGameRounds 获取轮次信息
 请求结构:
 
-```json
+```bash
 {
     "startRound":int64,
     "endRound":int64
 }
 ```
 
+|参数|类型|说明|
+|----|----|----|
+|startRound|int64|开始轮次|
+|endRound|int64|结束轮次|
+
 响应:
-```json
+```bash
 {
 	[
 		{
@@ -84,6 +98,7 @@ message RoundInfo {
 }
 ```
 
+响应为RoundInfo结构体构成的数组。
 
 #### 2.3.2 
 
@@ -92,27 +107,55 @@ message RoundInfo {
 #### 2.4.1 GetUserBonus 获取玩家中奖信息
 请求结构：
 
-```json
+```bash
 {
 	"User":string,
 	"StartRound":int64,
 	"EndRound":int64
 }
 ```
+|参数|类型|说明|
+|----|----|----|
+|User|string|游戏参与者地址|
+|StartRound|int64|开始轮次|
+|EndRound|int64|结束轮次|
+
 
 响应:
+```bash
+{
+    [
+        {
+            "round":int64,
+            "keyNum":int64,
+            "bonus":int64
+        }
+    ]
+}
+```
+
+|参数|类型|说明|
+|----|----|----|
+|round|int64|游戏轮次|
+|keyNum|int64|持有的钥匙把数|
+|bonus|int64|拿到的奖金|
+
 
 #### 2.4.2 GetUserIsLastOne 获取玩家是否中奖
+
 
 #### 2.4.3 GetUserKeyNum 获取玩家持有key的数量
 
 
 ## 3 存储
+### 3.1 StateDB存储
+
+### 3.2 LocalDB存储
 
 ## 4 配置
 合约配置信息：
 
-```bash
+```toml
 # 本游戏合约管理员地址
 f3d.manager = 14KEKbYtKKQm4wMthSK9J4La4nAiidGozt
 
