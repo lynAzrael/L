@@ -29,6 +29,10 @@
 ### 1.3 玩家购票
 ![玩家购票流程](https://github.com/lynAzrael/L/blob/master/chain33_plugin/F3D/resources/BuyKeys.png)
 
+当一轮游戏开始时，玩家可以进行购票。
+如果玩家购买的key数量过多导致余额不足以支付时，则认为此次交易失败。
+在进行开奖的过程中，玩家不可以继续购票。
+
 ### 1.4 信息查询
 
 
