@@ -1,38 +1,41 @@
+/*
+ * Copyright Fuzamei Corp. 2018 All Rights Reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
+ */
+
 package executor
 
 import (
-	"fmt"
-	ftypes "f3d/types"
 	"github.com/33cn/chain33/types"
+	pt "github.com/33cn/plugin/plugin/dapp/f3d/ptypes"
 )
 
-func (f *F3DGame) execLocal(receipt *types.Receipt) (*types.LocalDBSet, error) {
+// save receiptData to local db
+func (f *f3d) execLocal(receiptData *types.ReceiptData) (*types.LocalDBSet, error) {
 	dbSet := &types.LocalDBSet{}
-	if receipt.GetTy() != types.ExecOk {
-		return dbSet, nil
-	}
-	for _, log := range receipt.Logs {
+	for _, log := range receiptData.Logs {
 		switch log.Ty {
-		// 根据传入的日志类型，判断是否需要更新数据库中的轮次信息
-		case ftypes.LogTypeF3DGameBuyKeys, ftypes.LogTypeF3DGameStart, ftypes.LogTypeF3DGameStop:
-
+		case pt.TyLogf3dStart, pt.TyLogf3dBuy, pt.TyLogf3dDraw:
+			receipt := &pt.ReceiptF3D{}
+			if err := types.Decode(log.Log, receipt); err != nil {
+				return nil, err
+			}
+			kv := f.updateLocalDB(receipt)
+			dbSet.KV = append(dbSet.KV, kv...)
 		}
 	}
 	return dbSet, nil
 }
+func (f *f3d) ExecLocal_Start(payload *pt.F3DStart, tx *types.Transaction, receiptData *types.ReceiptData, index int) (*types.LocalDBSet, error) {
 
-func (f *F3DGame) ExecLocal_Start(game *ftypes.StartGame, transaction types.Transaction, receipt *types.Receipt, index int) (*types.LocalDBSet, error) {
-	return f.execLocal(receipt)
+	return f.execLocal(receiptData)
 }
 
-func (f *F3DGame) ExecLocal_Stop(stop *ftypes.StopGame, tx types.Transaction, receipt *types.Receipt, index int) (*types.LocalDBSet, error) {
-	return f.execLocal(receipt)
+func (f *f3d) ExecLocal_Draw(payload *pt.F3DLuckyDraw, tx *types.Transaction, receiptData *types.ReceiptData, index int) (*types.LocalDBSet, error) {
+	return f.execLocal(receiptData)
 }
 
-func (f *F3DGame) ExecLocal_Buy(buy *ftypes.BuyKeys, tx types.Transaction, receipt *types.Receipt, index int) (*types.LocalDBSet, error) {
-	return f.execLocal(receipt)
-}
-
-func getLocalDbRoundsInfoPrefix(round int64) []byte {
-	return []byte(fmt.Sprint("LODB-f3d-round-info:{%d}", round))
+func (f *f3d) ExecLocal_Buy(payload *pt.F3DBuyKey, tx *types.Transaction, receiptData *types.ReceiptData, index int) (*types.LocalDBSet, error) {
+	return f.execLocal(receiptData)
 }

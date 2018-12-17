@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+import "transaction.proto";
+import "f3d.proto";
+
+package types;
+
+message GameStartReq {
+    int64 round = 1;
+}
+
+message GameDrawReq {
+    int64 round = 1;
+}
+
+message GameBuyKeysReq {
+    int64 num = 1;
+}
+
+message KeyInfoQueryReq {
+    string addr = 1;
+    int64 round = 2;
+}
+
+message RoundInfoQueryReq {
+    int64 round = 1;
+}
+
+service f3d {
+    rpc Start (F3dStart) returns (UnsignTx) {
+    }
+    rpc LuckyDraw (F3dLuckyDraw) returns (UnsignTx) {
+    }
+    rpc BuyKeys(F3dBuyKey) returns (UnsignTx) {
+    }
+}
