@@ -2,24 +2,14 @@
 
 # . "../util/common.sh"
 
-start="205"
-count="210"
+start="225"
+count="230"
 managerAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
 userinfoTempfile=".userinfo_temp"
 addressInfo=".addr_info"
 addrbalanceInfo=".addr_balance_info"
 config_file="exec_config"
 rpc_addr="http://localhost:8801"
-leftCh="["
-rightCh="]"
-
-function ParseConfigFile()
-{
-    if [ ! -f ${config_file} ]; then
-        echo "Can't find config file."
-        exit 1
-    fi
-}
 
 function CheckAddressInfoFile()
 {
@@ -36,24 +26,34 @@ function CheckAddressInfoFile()
 
 function CreateUser() 
 {
-    for ((i=$start; i < ${count}; i++))
+    if [ $# -eq 2 ]; then
+        min=$1
+        max=$2
+    else
+        min=100
+        max=200
+    fi
+    for ((i=${min}; i < ${max}; i++))
     do 
         username="f3d_user"$i
         GetMethodInfo "CreateUser"
-        startMethodName="${method}"
+        addUserMethod="${method}"
         GetParamsInfo "CreateUser"
         RefreshParamString "${param}" "label" "${username}"
-        startParamsInfo="[${param}]"
+        addUserParamsInfo="[${param}]"
         
-        res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${startMethodName}"', "params": '"${startParamsInfo}"', "id":0}' -H 'content-type:text/plain;' ${rpc_addr} ` 
-        if [[ "${res}" =~ "ErrLabelHasUsed" ]]; then
+        Curl "${addUserMethod}" "${addUserParamsInfo}"
+        if [ $? -ne 0 ]; then
+            errInfo=`echo ${res} | awk -F '"' '{print $8}'`
+            echo "${username} => ${errInfo}"
             continue
         else
             echo "${res}" > ${userinfoTempfile}
             cat ${userinfoTempfile}
-            useraddr=`cat ${userinfoTempfile} | grep "addr" | awk -F '"' '{print $10}'`
-            echo "${username}:${useraddr}" >> ${addressInfo}
-            rm ${userinfoTempfile}
+            address=`cat ${userinfoTempfile} | grep "addr" | awk -F '"' '{print $10}'`
+            echo "${username}:${address}" >> ${addressInfo}
+            TransferToUser ${address} "100000"
+            TransferToExecFromAccount "90000" "f3d"
         fi
     done
 }
@@ -75,13 +75,13 @@ function Transfer()
 function Start()
 {
     GetMethodInfo "Start"
-    startMethodName="${method}"
+    startMethod="${method}"
     GetParamsInfo "Start"
     RefreshParamInt64 "${param}" "round" 1
     startParamsInfo="[${param}]"
 
-    res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${startMethodName}"', "params": '"${startParamsInfo}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
-    if [[ "${res}" =~ "Err" ]]; then
+    Curl "${startMethod}" "${startParamsInfo}"
+    if [ $? -ne 0 ]; then
         echo "Start new round failed, errInfo: ${res}"
         exit 1
     else
@@ -94,13 +94,13 @@ function Start()
 function Stop()
 {
     GetMethodInfo "Stop"
-    stopMethodName="${method}"
+    stopMethod="${method}"
     GetParamsInfo "Stop"
-    RefreshParamInt64 "${param}" "num" 1
+    RefreshParamInt64 "${param}" "round" 1
     stopParamsInfo="[${param}]"
 
-    res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${stopMethodName}"', "params": '"${stopParamsInfo}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
-    if [[ "${res}" =~ "Err" ]]; then
+    Curl "${stopMethod}" "${stopParamsInfo}"
+    if [ $? -ne 0 ]; then
         echo "Stop new round failed, errInfo: ${res}"
         exit 1
     else
@@ -112,20 +112,26 @@ function Stop()
 
 function Buy()
 {
-    buystart=$1
+    if [ $# -eq 2 ]; then
+        min=$1
+        max=$2
+    else
+        min=100
+        max=200
+    fi
     GetMethodInfo "Buy"
-    buyKeysmethodname="${method}"
+    buyKeysmethod="${method}"
     GetParamsInfo "Buy"
     RefreshParamInt64 "${param}" "num" "1"
     buyKeysParamsInfo="[${param}]"
-    for ((i=$start; i < ${count}; i++))
+    for ((i = ${min}; i < ${max}; i++))
     do 
-        username="f3d_user"$i
-        GetAddressByLabel $username
-        res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${buyKeysmethodname}"', "params": '"${buyKeysParamsInfo}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
-        if [[ "${res}" =~ "Err" ]]; then
+        Curl "${buyKeysmethod}" "${buyKeysParamsInfo}"
+        if [ $? -ne 0 ]; then
             continue
         else
+            username="f3d_user"$i
+            GetAddressByLabel $username
             unsignedTx=`echo ${res} | awk -F '"' '{print $6}'`
             Sign ${unsignedTx} ${address}
             sleep 0.5
@@ -219,17 +225,18 @@ function Sign()
     unsignedTx=$1
     sendaddr=$2
     GetMethodInfo "Sign"
-    signMethodName="${method}"
+    signMethod="${method}"
     GetParamsInfo "Sign"
     RefreshParamString "${param}" "addr" "${sendaddr}"
     RefreshParamString "${param}" "txHex" "${unsignedTx}"
+    signParamsInfo="[${param}]"
 
-    res=`curl --data-binary '{"method": '"${signMethodName}"', "params": '"[${param}]"', "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
-    if [[ "${res}" =~ "Err" ]]; then 
-        echo "${res}"
-    else
+    Curl "${signMethod}" "${signParamsInfo}"
+    if [ $? -eq 0 ]; then 
         signedTx=`echo ${res} | awk -F '"' '{print $6}'`
         Send ${signedTx}
+    else
+        echo "${res}"
     fi
    
 }
@@ -238,12 +245,13 @@ function Send()
 {
     signedtx=$1
     GetMethodInfo "Send"
-    sendMethodname="${method}"
+    sendMethod="${method}"
     GetParamsInfo "Send" "param"
     RefreshParamString "${param}" "data" "${signedtx}"
+    sendParamsInfo="[${param}]"
 
-    res=`curl --data-binary '{"method": '"${sendMethodname}"', "params": '"[${param}]"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr} `
-    if [[ "${res}" =~ "Err" ]]; then
+    Curl "${sendMethod}" "${sendParamsInfo}"
+    if [ $? -ne 0 ]; then
         errorInfo=`echo ${res} | awk -F '"' '{print $8}'`
         echo "${errorInfo}"
     fi
@@ -256,6 +264,18 @@ function GetKeyInfo()
     value=`sed -n "/^\[${section}/,/^\[/p" ${config_file} | awk 'NR>1 {print p} {p=$0}' | grep ${key} | awk -F '=' '{print $2}' | tr -d '\r'`
 }
 
+function Curl()
+{
+    method=$1
+    params=$2
+    res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${method}"', "params": '"${params}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr} -s`
+    if [[ "${res}" =~ "Err" ]]; then 
+        return 1
+    else
+        return 0
+    fi
+}
+
 function RefreshParamString() 
 {
     oldParam=$1
@@ -265,7 +285,6 @@ function RefreshParamString()
     # 使用jq后续curl指令执行有问题
     # param=`echo ${oldParam} | jq 'to_entries | map(if .key == "'${refreshKey}'" then . + {"value": "'${refreshVal}'"} else . end) | from_entries'`
     param=`echo "${oldParam}" | awk ' { for (i=1;i<=NF;i++) {if (match($i, "'${refreshKey}'")) {gsub(/inputParam/, "'${refreshVal}'", $(i+1)); print}} }'`
-    echo $param
 }
 
 function RefreshParamInt64()
@@ -281,17 +300,32 @@ function main()
 {
     GetKeyInfo "Op" "ops"
     ops=`echo ${value} | awk 'BEGIN{FS="[,\"]"} {for (i=1;i<NF;i++) {if ($i != "") print $i}}'`
-    for op in ${ops}; do
-        #statements
-        # echo "${op}"
-        ${op}
+    
+    while true
+    do
+        echo "Please input your operation. Support("${ops}"), quit to exit."
+        read op
+        if [ "${op}" == "quit" ]; then
+            break
+        elif [[ "${ops}" =~ "${op}" ]]; then
+            #statements
+            echo "Begin to ${op}..."
+            GetKeyInfo "${op}" "needRange"
+            if [ "${value}" == '"true"' ]; then
+                echo "please input range, like 10,20."
+                read range
+                min=`echo "${range}" | awk -F ',' '{print $1}'`
+                max=`echo "${range}" | awk -F ',' '{print $2}'`
+                ${op} ${min} ${max}
+            else
+                ${op}
+            fi
+        else
+            echo "Operation is not support."
+        fi
     done
 
-    # while 1
-    # {
-    #     echo "Please input your operation."
-
-    # }
+    echo "Cloing..."
 }
 
 # op=$1
