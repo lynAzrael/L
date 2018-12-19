@@ -1,0 +1,31 @@
+# 根据游戏规则的不同，配置不同的策略
+[Op]
+ops="CreateUser,Start,Buy,Stop"
+
+[Start]
+method="f3d.F3DStartTx"
+param={"round": "inputParam"}
+times="1"
+
+[Stop]
+method="f3d.F3DLuckyDrawTx"
+param={"round": "inputParam"}
+times="1"
+
+[Buy]
+method="f3d.F3DBuyKeysTx"
+param={"num": "inputParam"}
+times="1000"
+
+# Chain33交易的签名、发送等操作，一般不需要修改
+[Sign]
+method="Chain33.SignRawTx"
+param={"addr": "inputParam", "txHex": "inputParam",  "expire": "0"}
+
+[Send]
+method="Chain33.SendTransaction"
+param={"token": "BTY",  "data": "inputParam"}
+
+[CreateUser]
+method="Chain33.NewAccount"
+param={"label": "inputParam"}

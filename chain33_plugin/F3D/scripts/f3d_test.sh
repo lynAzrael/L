@@ -279,7 +279,7 @@ function RefreshParamInt64()
 
 function main()
 {
-    GetKeyInfo "Op" "support"
+    GetKeyInfo "Op" "ops"
     ops=`echo ${value} | awk 'BEGIN{FS="[,\"]"} {for (i=1;i<NF;i++) {if ($i != "") print $i}}'`
     for op in ${ops}; do
         #statements
