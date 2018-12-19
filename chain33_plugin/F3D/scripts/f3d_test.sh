@@ -1,11 +1,25 @@
 #!/bin/sh
 
-start="1"
-count="2000"
+start="200"
+count="205"
 managerAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
 userinfoTempfile=".userinfo_temp"
 addressInfo=".addr_info"
 addrbalanceInfo=".addr_balance_info"
+rpc_addr="http://localhost:8801"
+config_file="exec_config"
+leftCh="["
+rightCh="]"
+
+function ParseConfigFile()
+{
+    if [ ! -f ${config_file} ]; then
+        echo "Can't find config file."
+        exit 1
+    fi
+
+
+}
 
 function CheckAddressInfoFile()
 {
@@ -25,11 +39,18 @@ function CreateUser()
     for ((i=$start; i < ${count}; i++))
     do 
         username="f3d_user"$i
-        `./chain33-cli account create -l $username > ${userinfoTempfile}`
-        cat ${userinfoTempfile}
-        useraddr=`cat ${userinfoTempfile} | grep "addr" | awk -F '"' '{print $4}'`
-        echo "${username}:${useraddr}" >> ${addressInfo}
-        rm ${userinfoTempfile}
+        methodname="Chain33.NewAccount"
+        paramsInfo="[{\"label\": \"${username}\"}]"
+        res=`curl --data-binary "{\"jsonrpc\":\"2.0\", \"method\": \"${methodname}\", \"params\": ${paramsInfo} , \"id\":0}" -H 'content-type:text/plain;' ${rpc_addr} ` 
+        if [[ "${res}" =~ "ErrLabelHasUsed" ]]; then
+            continue
+        else
+            echo "${res}" > ${userinfoTempfile}
+            cat ${userinfoTempfile}
+            useraddr=`cat ${userinfoTempfile} | grep "addr" | awk -F '"' '{print $10}'`
+            echo "${username}:${useraddr}" >> ${addressInfo}
+            rm ${userinfoTempfile}
+        fi
     done
 }
 
@@ -47,16 +68,26 @@ function Transfer()
     done
 }
 
-function BuyKeys()
+function Buy()
 {
     buystart=$1
+    GetKeyInfo "Buy" "method"
+    buyKeysmethodname="${value}"
+    GetKeyInfo "Buy" "param"
+    RefreshParamInt64 "${value}" "num" "1"
+    buyKeysParamsInfo="[${param}]"
     for ((i=$buystart; i < ${count}; i++))
     do 
         username="f3d_user"$i
         GetAddressByLabel $username
-        unsignedTx=`./chain33-cli f3d game buy -n 1`
-        Sign ${unsignedTx} ${address}
-        sleep 0.5
+        res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${buyKeysmethodname}"', "params": '"${buyKeysParamsInfo}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
+        if [[ "${res}" =~ "Err" ]]; then
+            continue
+        else
+            unsignedTx=`echo ${res} | awk -F '"' '{print $6}'`
+            Sign ${unsignedTx} ${address}
+            sleep 0.5
+        fi
     done
 }
 
@@ -131,29 +162,88 @@ function Sign()
 {
     unsignedTx=$1
     sendaddr=$2
-    signedTx=`./chain33-cli wallet sign -d ${unsignedTx} -a ${sendaddr} -e 0`
-    Send ${signedTx} 
+    GetKeyInfo "Sign" "method"
+    signMethodName="${value}"
+    GetKeyInfo "Sign" "param"
+    RefreshParamString "${value}" "addr" "${sendaddr}"
+    RefreshParamString "${param}" "txHex" "${unsignedTx}"
+
+    res=`curl --data-binary '{"method": '"${signMethodName}"', "params": '"[${param}]"', "id": 0}' -H 'content-type:text/plain;' ${rpc_addr}`
+    if [[ "${res}" =~ "Err" ]]; then 
+        echo "${res}"
+    else
+        signedTx=`echo ${res} | awk -F '"' '{print $6}'`
+        Send ${signedTx}
+    fi
+   
 }
 
 function Send() 
 {
     signedtx=$1
-    ./chain33-cli wallet send -d ${signedtx}
+    GetKeyInfo "Send" "method"
+    sendMethodname="${value}"
+    GetKeyInfo "Send" "param"
+    RefreshParamString "${value}" "data" "${signedtx}"
+
+    res=`curl --data-binary '{"method": '"${sendMethodname}"', "params": '"[${param}]"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr} `
+    if [[ "${res}" =~ "Err" ]]; then
+        errorInfo=`echo ${res} | awk -F '"' '{print $8}'`
+        echo "${errorInfo}"
+    fi
 }
 
-op=$1
-if [ "X${op}" == "Xcreate" ]; then
-    CheckAddressInfoFile
-    CreateUser
-elif [ "X${op}" == "Xtransfer" ]; then
-    Transfer
-elif [ "X${op}" == "Xbuy" ]; then
-    buystart=$2
-    BuyKeys $buystart
-elif [[ "X${op}" == "Xcheck_balance" ]]; then
-    #statements
-    checkstart=$2
-    CheckBalance $checkstart
-else
-    echo "Invalid operation."
-fi
+function GetKeyInfo()
+{
+    section=$1
+    key=$2
+    value=`sed -n "/^\[${section}/,/^\[/p" ${config_file} | awk 'NR>1 {print p} {p=$0}' | grep ${key} | awk -F '=' '{print $2}' | tr -d '\r'`
+}
+
+function RefreshParamString() 
+{
+    oldParam=$1
+    refreshKey=$2
+    refreshVal=$3
+
+    # 使用jq后续curl指令执行有问题
+    # param=`echo ${oldParam} | jq 'to_entries | map(if .key == "'${refreshKey}'" then . + {"value": "'${refreshVal}'"} else . end) | from_entries'`
+    param=`echo "${oldParam}" | awk ' { for (i=1;i<=NF;i++) {if (match($i, "'${refreshKey}'")) {gsub(/inputParam/, "'${refreshVal}'", $(i+1)); print}} }'`
+    echo $param
+}
+
+function RefreshParamInt64()
+{
+    oldParam=$1
+    refreshKey=$2
+    refreshVal=$3
+
+    param=`echo "${oldParam}" | awk ' { for (i=1;i<=NF;i++) {if (match($i, "'${refreshKey}'")) {gsub(/\"inputParam\"/, '${refreshVal}', $(i+1)); print}} }'`
+}
+
+function ReadOperation()
+{
+    GetKeyInfo "Op" "support"
+    ops=`echo ${value} | awk 'BEGIN{FS="[,\"]"} {for (i=1;i<NF;i++) {if ($i != "") print $i}}'`
+    for op in ${ops}; do
+        #statements
+        `${op}`
+    done
+}
+
+# op=$1
+# if [ "X${op}" == "Xcreate" ]; then
+#     CheckAddressInfoFile
+#     CreateUser
+# elif [ "X${op}" == "Xtransfer" ]; then
+#     Transfer
+# elif [ "X${op}" == "Xbuy" ]; then
+#     buystart=$2
+#     BuyKeys $buystart
+# elif [[ "X${op}" == "Xcheck_balance" ]]; then
+#     #statements
+#     checkstart=$2
+#     CheckBalance $checkstart
+# else
+#     echo "Invalid operation."
+# fi
