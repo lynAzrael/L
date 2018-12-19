@@ -16,6 +16,7 @@ times="1"
 method="f3d.F3DBuyKeysTx"
 param={"num": "inputParam"}
 times="1000"
+needRange="true"
 
 # Chain33交易的签名、发送等操作，一般不需要修改
 [Sign]
@@ -29,3 +30,5 @@ param={"token": "BTY",  "data": "inputParam"}
 [CreateUser]
 method="Chain33.NewAccount"
 param={"label": "inputParam"}
+needRange="true"
+

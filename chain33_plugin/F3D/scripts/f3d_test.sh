@@ -261,7 +261,7 @@ function GetKeyInfo()
 {
     section=$1
     key=$2
-    value=`sed -n "/^\[${section}/,/^\[/p" ${config_file} | awk 'NR>1 {print p} {p=$0}' | grep ${key} | awk -F '=' '{print $2}' | tr -d '\r'`
+    value=`sed -n "/^\[${section}/,/^\[/p" ${config_file} | grep ${key} | awk -F '=' '{print $2}' | tr -d '\r'`
 }
 
 function Curl()
