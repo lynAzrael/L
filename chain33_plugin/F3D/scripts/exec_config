@@ -1,6 +1,8 @@
 # 根据游戏规则的不同，配置不同的策略
-[Op]
-ops="CreateUser,Start,Buy,Stop"
+[Run]
+preset=["CreateUser"]
+implement=["Start,Buy,Stop"]
+runtimes="10"
 
 [Start]
 method="f3d.F3DStartTx"
@@ -41,6 +43,18 @@ check=$(expectField.remainTime)
 expectVal=""
 
 # Chain33交易的签名、发送等操作，一般不需要修改
+[SaveSeed]
+method="Chain33.SaveSeed"
+param={"seed": "lens involve pudding midnight climb depend alcohol sibling carpet ghost garment child faith upper runway", "passwd": "fzm"}
+
+[ImportKey]
+method="Chain33.ImportPrivkey"
+param={"privkey": "CC38546E9E659D15E6B4893F0AB32A06D103931A8230B0BDE71459D2B27D6944", "label": "manager"}
+
+[Unlock]
+method="Chain33.UnLock"
+params={"passwd": "fzm"}
+
 [Sign]
 method="Chain33.SignRawTx"
 param={"addr": "inputParam", "txHex": "inputParam",  "expire": "0"}
