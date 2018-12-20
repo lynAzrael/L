@@ -8,7 +8,7 @@
         - [2.1 操作声明](#21-操作声明)
         - [2.2 操作运行](#22-操作运行)
         - [2.3 操作创建](#23-操作创建)
-        - [2.4 合法性校验](#24-合法性校验)
+        - [2.4 状态信息检查](#24-状态信息检查)
         - [2.5 公共状态信息](#25-公共状态信息)
     - [3 实现](#3-实现)
         - [3.1 执行ops预置条件](#31-执行ops预置条件)
@@ -69,9 +69,9 @@ check="true"
 |param|调用合约需要传入的参数字段信息|
 |times|操作重复的次数|
 |needrange|操作是否需要用户传入一个范围信息|
-|check|操作执行前是否需要校验|
+|check|操作执行前是否需要状态检查|
 
-### 2.4 合法性校验
+### 2.4 状态信息检查
 ```bash=
 [op_Check]
 method="rpcMethodName"
@@ -80,6 +80,8 @@ expectField=["field1", "updateTime"]
 check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
 expectVal="0"
 ```
+
+存在某种场景：只有当某个状态触发时，才允许后续的操作进行下去，因此需要一个状态检查。
 
 如果一个op操作的check选项为true时，则会根据对应的op_Check 中配置的规则进行校验
 
