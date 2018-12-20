@@ -100,7 +100,7 @@ locatime="util.GetLocalTime"
 
 ## 4 测试
 ### 4.1 F3D测试配置
-```toml
+```bash=
 # 根据游戏规则的不同，配置不同的策略
 [Run]
 preset=["CreateUser"]
