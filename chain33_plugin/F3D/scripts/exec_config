@@ -5,18 +5,40 @@ ops="CreateUser,Start,Buy,Stop"
 [Start]
 method="f3d.F3DStartTx"
 param={"round": "inputParam"}
-times="1"
+check="true"
+
+[Start_Check]
+method="Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+expectField=["remainTime"]
+check=$(expectField.remainTime)
+expectVal=""
 
 [Stop]
 method="f3d.F3DLuckyDrawTx"
 param={"round": "inputParam"}
-times="1"
+check="true"
+
+[Stop_Check]
+method= "Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+expectField=["remainTime", "updateTime"]
+check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
+expectVal="0"
 
 [Buy]
 method="f3d.F3DBuyKeysTx"
 param={"num": "inputParam"}
 times="1000"
 needRange="true"
+check="true"
+
+[Buy_Check]
+method="Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+expectField=["remainTime"]
+check=$(expectField.remainTime)
+expectVal=""
 
 # Chain33交易的签名、发送等操作，一般不需要修改
 [Sign]
@@ -32,3 +54,5 @@ method="Chain33.NewAccount"
 param={"label": "inputParam"}
 needRange="true"
 
+[CommonField]
+locatime
