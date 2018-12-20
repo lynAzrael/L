@@ -27,6 +27,7 @@ runtimes="10"
 ```
 
 Run表示游戏执行的逻辑
+
 |字段|说明|
 |----|----|
 |preset|预置条件，在运行之前需要执行|
@@ -69,6 +70,12 @@ expectVal="0"
 |expectField|期望从状态查询响应中获取到的字段，用于后续check逻辑的检查|
 |check|操作校验的逻辑|
 |expectVal|校验的期望值，如果满足expectVal则表示校验成功。|
+
+### 2.5 公共状态信息
+```bash=
+[CommonField]
+locatime="util.GetLocalTime"
+```
 
 
 ## 3 实现
