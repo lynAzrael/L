@@ -60,8 +60,8 @@ times="repeadtime"
 needrange="true"
 check="true"
 ```
-此处的section名称op表示一个操作,实际可以为Start,Stop操作。
-动作的执行，是通过调用合约已经写好的rpc接口进行实现。
+此处的section名称op表示一个操作,在实际游戏合约可以是Start,Stop等操作。
+动作的执行是通过调用合约已经写好的rpc接口进行实现。
 
 |字段|说明|
 |----|----|
@@ -92,9 +92,11 @@ expectVal="0"
 ### 2.5 公共状态信息
 ```bash=
 [CommonField]
-locatime="util.GetLocalTime"
+locatime="common.GetLocalTime"
 ```
+CommonField表示公共字段信息, 例如系统当前时间、系统Cpu数量等。
 
+其中各个变量的字段值根据配置的函数进行获取。
 
 ## 3 实现
 ### 3.1 执行ops预置条件
