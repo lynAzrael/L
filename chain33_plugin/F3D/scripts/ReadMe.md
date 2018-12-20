@@ -18,11 +18,12 @@ ops表示游戏支持的动作
 其中CreateUser，Start，Buy，Stop表示游戏支持创建用户、开始、购买、停止的操作。
 后续需要针对每一个操作，配置一个Section。
 
-### 2.2 运行流程
+### 2.2 操作运行
 ```bash=
 [Run]
 preset="CreateUser"
 implement="Start,Buy,Stop"
+runtimes="10"
 ```
 
 Run表示游戏执行的逻辑
@@ -70,4 +71,21 @@ expectVal="0"
 |expectVal|校验的期望值，如果满足expectVal则表示校验成功。|
 
 
-## 3 
+## 3 实现
+#### 3.1 执行ops预置条件
+1 从Run标签的preset中查找需要执行的预置op
+2 校验是否支持该op，即是否能在配置文件中查找到该op对应的section信息
+3 如果支持该操作，则执行该op
+
+#### 3.2 执行ops
+1 判断预置条件是否执行完毕
+2 从implement中获取所有需要执行的op，校验是否支持
+3 校验通过，则根据配置策略进行状态检查以及具体执行(执行顺序与implement中配置顺序保持一致)
+
+#### 3.3 op状态检查
+1 从op中获取对应section(${op}_Check)中check字段的取值，如果为true则需要进行状态的检查
+2 根据op_Check中配置的策略获取状态信息，如果计算结果与预期值相符，则认为检查成功，可以进行op操作.
+
+#### 3.4 循环
+1 当一轮操作(implement中的所有op)均执行完毕之后，会再次从头开始执行，循环的次数由runtimes控制; preset不会循环执行，因为预置条件只需要执行一次即可。
+2 在一轮操作中，每个op也有可能执行多次。循环次数由各个op对应的times控制。
