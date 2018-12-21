@@ -49,7 +49,7 @@ Run表示游戏执行的逻辑
 [op]
 method="rpcMethodName"
 param={"param1":"value1", "param2":"value2"...}
-times=repeadtime
+times=1
 check="true"
 ```
 此处的section名称op表示一个操作,在实际游戏合约可以是Start,Stop等操作。
@@ -73,7 +73,7 @@ times=3
 method="rpcMethodName"
 param={"param1":"value1", "param2":"value2"...}
 expectField=["field1", "updateTime"]
-rule=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
+rule="$(expectField.remainTime+expectField.updateTime-CommonField.localtime)"
 expectVal="0"
 ```
 
@@ -99,7 +99,7 @@ $表示需要进行数学运算，对后续()中的内容进行四则运算.
 [CommonField]
 locatime="common.GetLocalTime"
 startheight="common.GetStartHeight"
-currentheight"common.GetCurrentHeight"
+currentheight="common.GetCurrentHeight"
 starthash=Start.Resp["result"]
 ```
 CommonField表示公共字段信息, 例如系统当前时间、当前区块高度等
@@ -158,7 +158,7 @@ check="true"
 method="Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
 expectField=["remainTime"]
-check=$(expectField.remainTime)
+check="$(expectField.remainTime)"
 expectVal=""
 
 [Stop]
@@ -170,7 +170,7 @@ check="true"
 method= "Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
 expectField=["remainTime", "updateTime"]
-check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
+check="$(expectField.remainTime+expectField.updateTime-CommonField.localtime)"
 expectVal="0"
 
 [Buy]
@@ -184,7 +184,7 @@ check="true"
 method="Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
 expectField=["remainTime"]
-check=$(expectField.remainTime)
+check="$(expectField.remainTime)"
 expectVal=""
 
 # Chain33交易的签名、发送等操作，一般不需要修改
@@ -214,8 +214,8 @@ param={"label": "inputParam"}
 times=1
 
 [CommonField]
-locatime=util.GetLocalTime
-starthash=Start.resp["result"]
+locatime="util.GetLocalTime"
+starthash="Start.resp["result"]"
 currentheight=
 starthegiht=
 ```
