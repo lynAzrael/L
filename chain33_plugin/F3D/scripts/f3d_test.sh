@@ -296,6 +296,43 @@ function RefreshParamInt64()
     param=`echo "${oldParam}" | awk ' { for (i=1;i<=NF;i++) {if (match($i, "'${refreshKey}'")) {gsub(/\"inputParam\"/, '${refreshVal}', $(i+1)); print}} }'`
 }
 
+function OperationCheck()
+{
+    opName=$1
+    sectionInfo=`cat exec_config | sed -n "/^\[${opName}/,/^\[/p"`
+    methodInfo=`echo "${sectionInfo}"  | grep "method" | tr -d '\r\n'`
+    paramInfo=`echo "${sectionInfo}"  | grep "param" | tr -d '\r\n'`
+
+    if [[ "${methodInfo}" != "" && "${paramInfo}" != "" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function GetPreset()
+{
+    GetKeyInfo "Run" "preset"
+    presetInfo="${value}"
+}
+
+function GetImplement()
+{
+    GetKeyInfo "Run" "implement"
+    implement="${value}"
+}
+
+function GetCheckRule()
+{
+
+}
+
+function PresetCheck()
+{
+    
+}
+
+
 function main()
 {
     GetKeyInfo "Op" "ops"
