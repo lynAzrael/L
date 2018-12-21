@@ -100,7 +100,7 @@ $表示需要进行数学运算，对后续()中的内容进行四则运算.
 locatime="common.GetLocalTime"
 startheight="common.GetStartHeight"
 currentheight="common.GetCurrentHeight"
-starthash=Start.Resp["result"]
+starthash="Start.Resp['result']"
 ```
 CommonField表示公共字段信息, 例如系统当前时间、当前区块高度等
 
@@ -215,7 +215,7 @@ times=1
 
 [CommonField]
 locatime="util.GetLocalTime"
-starthash="Start.resp["result"]"
+starthash="Start.resp[\"result\"]"
 currentheight=
 starthegiht=
 ```
