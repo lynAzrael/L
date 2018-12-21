@@ -27,7 +27,8 @@
 在配置文件中，填写游戏支持的操作信息以及对应chain33内部实现的rpc接口名称以及查询所需字段信息
 
 ### 2.1 运行配置
-```bash=
+
+```toml=
 [Run]
 preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
 implement=["Start,Buy,Stop"]
@@ -44,7 +45,7 @@ Run表示游戏执行的逻辑
 
 ### 2.2 动作配置
 
-```bash=
+```bash
 [op]
 method="rpcMethodName"
 param={"param1":"value1", "param2":"value2"...}
@@ -64,7 +65,8 @@ check="true"
 
 
 ### 2.3 状态检查配置
-```bash=
+
+```bash
 [op_Check]
 interval=10
 times=3
@@ -92,7 +94,8 @@ $表示需要进行数学运算，对后续()中的内容进行四则运算.
 |expectVal|校验的期望值，如果满足expectVal则表示校验成功|
 
 ### 2.4 公共状态信息配置
-```bash=
+
+```bash
 [CommonField]
 locatime="common.GetLocalTime"
 startheight="common.GetStartHeight"
@@ -139,7 +142,7 @@ CommonField表示公共字段信息, 例如系统当前时间、当前区块高�
 ## 4 测试
 ### 4.1 F3D测试配置
 
-```bash=
+```bash
 # 根据游戏规则的不同，配置不同的策略
 [Run]
 preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
