@@ -132,15 +132,12 @@ function OperationCheck()
 
 3 如果支持该操作，则执行该操作
 ```bash=
-function RunImplement()
+function RunPreset()
 {
-    GetImplement()
-    for op in `echo "${implement}"`
+    GetPreset()
+    for op in `echo "${presetOps}"`
     do 
-        OperationCheck ${op}
-        if [ #? -eq 0 ]; then
-            RunOp
-        fi
+        RunOp "${op}"
     done
 }
 ```
@@ -152,6 +149,20 @@ function RunImplement()
 2 从implement中获取所有需要执行的操作，校验是否支持
 
 3 校验通过，则根据配置策略进行状态检查以及具体执行(执行顺序与implement中配置顺序保持一致)
+
+```bash=
+function RunImplement()
+{
+    GetImplement()
+    for op in `echo "${implement}"`
+    do 
+        OperationCheck ${op}
+        if [ $? -eq 0 ]; then
+            RunOp
+        fi
+    done
+}
+```
 
 ### 3.3 op状态检查
 1 从op中获取对应section(${op}_Check)中check字段的取值，如果为true则需要进行状态的检查

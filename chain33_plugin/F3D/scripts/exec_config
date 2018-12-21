@@ -1,8 +1,8 @@
 # 根据游戏规则的不同，配置不同的策略
 [Run]
-preset=["CreateUser"]
+preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
 implement=["Start,Buy,Stop"]
-runtimes="10"
+runtimes=1
 
 [Start]
 method="f3d.F3DStartTx"
@@ -31,7 +31,7 @@ expectVal="0"
 [Buy]
 method="f3d.F3DBuyKeysTx"
 param={"num": "inputParam"}
-times="1000"
+times=1
 needRange="true"
 check="true"
 
@@ -66,7 +66,7 @@ param={"token": "BTY",  "data": "inputParam"}
 [CreateUser]
 method="Chain33.NewAccount"
 param={"label": "inputParam"}
-needRange="true"
+times=1
 
 [CommonField]
 locatime
