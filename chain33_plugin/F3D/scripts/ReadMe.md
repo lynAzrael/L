@@ -26,12 +26,12 @@
 ## 2 配置文件
 在配置文件中，填写游戏支持的操作信息以及对应chain33内部实现的rpc接口名称以及查询所需字段信息
 
-### 2.1 运行
+### 2.1 运行配置
 ```bash=
 [Run]
-preset="CreateUser"
-implement="Start,Buy,Stop"
-runtimes="10"
+preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
+implement=["Start,Buy,Stop"]
+runtimes=1
 ```
 
 Run表示游戏执行的逻辑
@@ -42,32 +42,28 @@ Run表示游戏执行的逻辑
 |implement|具体执行逻辑，按照配置的先后顺序依次执行|
 |runtimes|implement循环执行的次数|
 
-### 2.2 配置
+### 2.2 动作配置
+
 ```bash=
 [op]
 method="rpcMethodName"
 param={"param1":"value1", "param2":"value2"...}
-times="repeadtime"
-needrange="true"
+times=repeadtime
 check="true"
-
 ```
 此处的section名称op表示一个操作,在实际游戏合约可以是Start,Stop等操作。
 
 动作的执行是通过调用合约已经写好的rpc接口进行实现。
 
-当value的取值为""时，表示
-
-|字段|说明|
-|----|----|
-|method|合约内部已经实现的rpc接口名称|
-|param|调用合约需要传入的参数字段信息|
-|times|操作重复的次数|
-|needrange|操作是否需要用户传入一个范围信息|
-|check|操作执行前是否需要状态检查|
+|字段|类型|说明|备注|
+|----|----|----|----|
+|method|字符串|chain33内部已经实现的op动作对应rpc接口||
+|param|json字符串|调用rpc时，需要传入的参数字段信息|当value字段为"inputParam"时，表示取值需要从外部传入|
+|times|整形|操作重复地次数||
+|check|字符串|执行钱是否需要进行状态检查||
 
 
-### 2.3 状态检查
+### 2.3 状态检查配置
 ```bash=
 [op_Check]
 interval=10
@@ -89,16 +85,21 @@ $表示需要进行数学运算，对后续()中的内容进行四则运算.
 |----|----|
 |interval|状态检查的间隔|
 |times|状态检查的次数|
+|method|字符串|chain33内部已经实现的状态信息查询接口||
+|param|json字符串|调用rpc时，需要传入的参数字段信息|当value字段为"inputParam"时，表示取值需要从外部传入|
 |expectField|期望从状态查询响应中获取到的字段，用于后续check逻辑的检查|
-|check|操作校验的逻辑|
+|rule|操作校验的逻辑|
 |expectVal|校验的期望值，如果满足expectVal则表示校验成功|
 
-### 2.4 公共状态信息
+### 2.4 公共状态信息配置
 ```bash=
 [CommonField]
 locatime="common.GetLocalTime"
+startheight="common.GetStartHeight"
+currentheight"common.GetCurrentHeight"
+starthash=Start.Resp["result"]
 ```
-CommonField表示公共字段信息, 例如系统当前时间、系统Cpu数量等
+CommonField表示公共字段信息, 例如系统当前时间、当前区块高度等
 
 其中各个变量的字段值根据配置的函数进行获取
 
@@ -134,7 +135,6 @@ CommonField表示公共字段信息, 例如系统当前时间、系统Cpu数量�
 1 当一轮操作(implement中的所有操作)均执行完毕之后，会再次从头开始执行，循环的次数由runtimes控制; preset不会循环执行，因为预置条件只需要执行一次即可
 
 2 在一轮操作中，每个op也有可能执行多次。循环次数由各个操作对应的times控制
-
 
 ## 4 测试
 ### 4.1 F3D测试配置

@@ -389,12 +389,30 @@ function RunImplement()
     done
 }
 
+function PreCheck()
+{
+    GetKeyInfo "${opName}" "${check}"
+    if [ "${value}" == "true" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function RunCheck()
+{
+    
+}
+
 function RunOp()
 {
     opName=$1
 
     # 判断是否需要状态检查
-    
+    PreCheck
+    if [ $? -eq 0 ]; then
+        RunCheck
+    fi 
 
 
     GetKeyInfo "${opName}" "times"
