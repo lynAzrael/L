@@ -106,6 +106,7 @@ function Buy()
     buyKeysmethod="${method}"
     GetParamsInfo "Buy"
     RefreshParamInt64 "${param}" "num" "1"
+    RefreshParamString "${param}" "txhash" ""
     buyKeysParamsInfo="[${param}]"
 
     for line in `cat ${addressInfo} | grep -v "^$"`
@@ -391,6 +392,11 @@ function RunImplement()
 function RunOp()
 {
     opName=$1
+
+    # 判断是否需要状态检查
+    
+
+
     GetKeyInfo "${opName}" "times"
     times=${value}
 

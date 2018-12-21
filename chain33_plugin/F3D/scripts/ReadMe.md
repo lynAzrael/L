@@ -25,18 +25,8 @@
 
 ## 2 配置文件
 在配置文件中，填写游戏支持的操作信息以及对应chain33内部实现的rpc接口名称以及查询所需字段信息
-### 2.1 操作声明
-```bash=
-# 根据游戏规则的不同，配置不同的策略
-[Op]
-ops="CreateUser,Start,Buy,Stop"
-```
 
-ops表示游戏支持的动作
-其中CreateUser，Start，Buy，Stop表示游戏支持创建用户、开始、购买、停止的操作。
-后续需要针对每一个操作，配置一个Section。
-
-### 2.2 操作运行
+### 2.1 运行
 ```bash=
 [Run]
 preset="CreateUser"
@@ -48,10 +38,11 @@ Run表示游戏执行的逻辑
 
 |字段|说明|
 |----|----|
-|preset|预置条件，在运行之前需要执行|
-|implemen|具体执行逻辑，按照配置的先后顺序依次执行|
+|preset|预置条件，在运行之前需要执行|字符串数组|
+|implement|具体执行逻辑，按照配置的先后顺序依次执行|
+|runtimes|implement循环执行的次数|
 
-### 2.3 操作创建
+### 2.2 配置
 ```bash=
 [op]
 method="rpcMethodName"
@@ -59,9 +50,13 @@ param={"param1":"value1", "param2":"value2"...}
 times="repeadtime"
 needrange="true"
 check="true"
+
 ```
 此处的section名称op表示一个操作,在实际游戏合约可以是Start,Stop等操作。
+
 动作的执行是通过调用合约已经写好的rpc接口进行实现。
+
+当value的取值为""时，表示
 
 |字段|说明|
 |----|----|
@@ -71,9 +66,12 @@ check="true"
 |needrange|操作是否需要用户传入一个范围信息|
 |check|操作执行前是否需要状态检查|
 
-### 2.4 状态信息检查
+
+### 2.3 状态检查
 ```bash=
 [op_Check]
+interval=10
+times=3
 method="rpcMethodName"
 param={"param1":"value1", "param2":"value2"...}
 expectField=["field1", "updateTime"]
@@ -89,11 +87,13 @@ $表示需要进行数学运算，对后续()中的内容进行四则运算.
 
 |字段|说明|
 |----|----|
+|interval|状态检查的间隔|
+|times|状态检查的次数|
 |expectField|期望从状态查询响应中获取到的字段，用于后续check逻辑的检查|
 |check|操作校验的逻辑|
 |expectVal|校验的期望值，如果满足expectVal则表示校验成功|
 
-### 2.5 公共状态信息
+### 2.4 公共状态信息
 ```bash=
 [CommonField]
 locatime="common.GetLocalTime"
@@ -104,106 +104,36 @@ CommonField表示公共字段信息, 例如系统当前时间、系统Cpu数量�
 
 ## 3 实现
 ### 3.1 执行ops预置条件
-1 从Run标签的preset中查找需要执行的预置操作
-```bash=
-function GetPreset()
-{
-    GetKeyInfo "Run" "preset"
-    presetInfo="${value}"
-}
-```
+1 从Run标签的preset中获取预置操作
 
-2 校验是否支持该操作，即是否能在配置文件中查找到该操作对应的section信息，以及所需的method、param信息。
-```bash=
-function OperationCheck()
-{
-    opName=$1
-    sectionInfo=`cat exec_config | sed -n "/^\[${opName}/,/^\[/p"`
-    methodInfo=`echo "${sectionInfo}"  | grep "method" | tr -d '\r\n'`
-    paramInfo=`echo "${sectionInfo}"  | grep "param" | tr -d '\r\n'`
+2 校验是否支持（是否能在配置文件中查找到该操作对应的section信息，以及所需的method、param信息）
 
-    if [[ "${methodInfo}" != "" && "${paramInfo}" != "" ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
-```
+3 校验通过，则按照配置顺序依次执行;校验失败则退出
 
-3 如果支持该操作，则执行该操作
-```bash=
-function RunPreset()
-{
-    GetPreset()
-    for op in `echo "${presetOps}"`
-    do 
-        RunOp "${op}"
-    done
-}
-```
-4 预置条件执行完毕，准备开始执行implement中的操作
+4 执行结束后，记录执行的状态信息; 成功则开始执行后续implement操作，失败则退出
 
 ### 3.2 执行ops
-1 判断预置条件是否执行完毕
+1 判断预置条件是否成功执行
 
-2 从implement中获取所有需要执行的操作，校验是否支持
+2 获取implement中所有需要执行的操作，校验配置文件信息
 
-3 校验通过，则根据配置策略进行状态检查以及具体执行(执行顺序与implement中配置顺序保持一致)
+3 校验通过，判断是否需要进行状态检查; 不通过则等待10s后再次校验，连续校验三次不通过则退出;
 
-```bash=
-function RunImplement()
-{
-    GetImplement()
-    for op in `echo "${implement}"`
-    do 
-        OperationCheck ${op}
-        if [ $? -eq 0 ]; then
-            RunOp
-        fi
-    done
-}
-```
+4 状态检查通过后，根据配置具体执行操作
+
+>Note: implement操作执行顺序与配置顺序保持一致
 
 ### 3.3 op状态检查
-1 从op中获取对应section(${op}_Check)中check字段的取值，如果为true则需要进行状态的检查
+1 根据op_Check中配置的策略查询状态信息
 
-2 根据op_Check中配置的策略获取状态信息，如果计算结果与预期值相符则认为检查成功，可以进行后续操作
+2 从响应中获取期望字段(expectField配置的字段列表), 并根据Check中的规则计算最终结果
 
-
-
+3 将计算结果与预期值(expectVal)对比。相同则认为状态检查通过，可以继续进行后续操作；否则，认为检查失败，继续等待一次状态检查.
 
 ### 3.4 循环
 1 当一轮操作(implement中的所有操作)均执行完毕之后，会再次从头开始执行，循环的次数由runtimes控制; preset不会循环执行，因为预置条件只需要执行一次即可
-```bash=
-function Run()
-{
-    runtimes=$1
-    
-    # 执行预置条件
-    RunPreset
-    
-    # 根据[run]中配置的次数，进行循环操作
-    for ((i=0; i < ${runtimes}; i++))
-    do
-        RunImplement
-    done
-}
-```
 
 2 在一轮操作中，每个op也有可能执行多次。循环次数由各个操作对应的times控制
-```bash=
-function RunOp()
-{
-    opName=$1
-    times=GetKeyInfo "${opName}" "times"
-    
-    # 根据[op]中配置的次数，进行循环操作
-    for ((i=0; i < ${times}; i++))
-    do
-        RunImplement
-    done
-}
-```
 
 
 ## 4 测试
@@ -212,9 +142,9 @@ function RunOp()
 ```bash=
 # 根据游戏规则的不同，配置不同的策略
 [Run]
-preset=["CreateUser"]
+preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
 implement=["Start,Buy,Stop"]
-runtimes="10"
+runtimes=1
 
 [Start]
 method="f3d.F3DStartTx"
@@ -243,7 +173,7 @@ expectVal="0"
 [Buy]
 method="f3d.F3DBuyKeysTx"
 param={"num": "inputParam"}
-times="1000"
+times=1
 needRange="true"
 check="true"
 
@@ -278,8 +208,11 @@ param={"token": "BTY",  "data": "inputParam"}
 [CreateUser]
 method="Chain33.NewAccount"
 param={"label": "inputParam"}
-needRange="true"
+times=1
 
 [CommonField]
-locatime
+locatime=util.GetLocalTime
+starthash=Start.resp["result"]
+currentheight=
+starthegiht=
 ```

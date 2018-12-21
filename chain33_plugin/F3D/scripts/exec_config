@@ -1,7 +1,7 @@
 # 根据游戏规则的不同，配置不同的策略
 [Run]
-preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
-implement=["Start,Buy,Stop"]
+preset=["SaveSeed,Unlock,ImportKey,CreateUser,Start"]
+implement=["Buy,Stop"]
 runtimes=1
 
 [Start]
@@ -30,7 +30,7 @@ expectVal="0"
 
 [Buy]
 method="f3d.F3DBuyKeysTx"
-param={"num": "inputParam"}
+param={"num": "inputParam", "txhash": "CommonField.starthash"}
 times=1
 needRange="true"
 check="true"
@@ -70,3 +70,4 @@ times=1
 
 [CommonField]
 locatime
+starthash=Start.Resp["result"]
