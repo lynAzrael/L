@@ -215,7 +215,7 @@ times=1
 
 [CommonField]
 locatime="util.GetLocalTime"
-starthash="Start.resp[\"result\"]"
+starthash="Start.resp['result']"
 currentheight=
 starthegiht=
 ```
