@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# . "../util/common.sh"
+ . "./common.sh"
 
 start="225"
 count="230"
@@ -9,7 +9,6 @@ userinfoTempfile=".userinfo_temp"
 addressInfo=".addr_info"
 addrbalanceInfo=".addr_balance_info"
 config_file="exec_config"
-rpc_addr="http://localhost:8801"
 
 function CheckAddressInfoFile()
 {
@@ -283,25 +282,6 @@ function ImportKey()
     fi
 }
 
-function GetKeyInfo()
-{
-    section=$1
-    key=$2
-    value=`sed -n "/^\[${section}/,/^\[/p" ${config_file} | grep ${key} | awk -F '=' '{print $2}' | tr -d '\r'`
-}
-
-function Curl()
-{
-    method=$1
-    params=$2
-    res=`curl --data-binary '{"jsonrpc":"2.0", "method": '"${method}"', "params": '"${params}"' , "id": 0}' -H 'content-type:text/plain;' ${rpc_addr} -s`
-    if [[ "${res}" =~ "Err" ]]; then 
-        return 1
-    else
-        return 0
-    fi
-}
-
 function RefreshParamString() 
 {
     oldParam=$1
@@ -322,6 +302,14 @@ function RefreshParamInt64()
     param=`echo "${oldParam}" | awk ' { for (i=1;i<=NF;i++) {if (match($i, "'${refreshKey}'")) {gsub(/\"inputParam\"/, '${refreshVal}', $(i+1)); print}} }'`
 }
 
+function GetExpectFieldFromResp()
+{
+    resp=$1
+    key=$2
+
+    val=`echo "${resp}" | awk 'BEGIN {FS="[,:]"} {for (i=1;i<=NF;i++) {if (match($i, '${key}')) print $(i+1)}}'`
+}
+
 function OperationCheck()
 {
     opName=$1
@@ -338,24 +326,41 @@ function OperationCheck()
 
 function GetPreset()
 {
-    GetKeyInfo "Run" "preset"
+    GetKeyInfo "Run" "preset="
     presetOps="${value}"
 }
 
 function GetImplement()
 {
-    GetKeyInfo "Run" "implement"
+    GetKeyInfo "Run" "implement="
     implementOps="${value}"
+}
+
+function GetExpectField()
+{
+    op=$1
+    GetKeyInfo "${op}" "expectField="
+    expectField=`echo "${value}" | awk 'BEGIN {FS="[,\\\[\\\]]"} {for (i=1;i<=NF;i++) {if ($i != "") print $i}}'`
+}
+
+function GetExpectValue()
+{
+    op=$1
+    GetKeyInfo "${op}" "expectVal="
+    expectVal="${value}"
 }
 
 function GetCheckRule()
 {
-    return 0
+    op=$1
+    GetKeyInfo "${op}" "check="
+    checkRule="${value}"
 }
 
 function PresetStatusCheck()
 {
     # TODO: preset状态检查
+
     return 0
 }
 
@@ -391,17 +396,79 @@ function RunImplement()
 
 function PreCheck()
 {
-    GetKeyInfo "${opName}" "${check}"
-    if [ "${value}" == "true" ]; then
+    GetKeyInfo "${opName}" "check"
+    if [ ${value} == '"true"' ]; then
         return 0
     else
         return 1
     fi
 }
 
+function StartCheck()
+{
+    return 0
+}
+
 function RunCheck()
 {
-    
+    op=$1
+    op_check="${op}_Check"
+
+    # 获取op_check配置信息
+    GetMethodInfo "${op_check}"
+    checkMethod="${method}"
+    GetParamsInfo "${op_check}"
+    checkParam="${param}"
+
+    Curl "${checkMethod}" "[${checkParam}]"
+    if [ $? -ne 0 ]; then
+        errorInfo=`echo ${res} | awk -F '"' '{print $8}'`
+        echo "${errorInfo}"
+    else
+        GetCheckRule "${op_check}"
+        if [ "${checkRule:0:1}" == "$" ];then
+            math=true
+        fi
+        # 使用获取到的取值替换rule中的字段, 删掉expectField前缀
+        checkRule=`echo "${checkRule}" | sed -n 's/expectField.//pg'`
+        if [[ ${checkRule} =~ "(" || ${checkRule} =~ ")" ]]; then
+            rule=`echo "${checkRule}" | awk 'BEGIN {FS="[$\\\(\\\)]"} {for (i=1; i<NF;i++) {if ($i != "") print $i}}'`
+        else
+            rule=${checkRule}
+        fi
+
+        commonFields=`echo "$rule" | awk 'BEGIN{FS="[+-/.]"} {for (i=1;i<=NF;i++){if ($i == "CommonField") print $(i+1)}}'`
+        for field in `echo "${commonFields}"`
+        do
+            GetKeyInfo "CommonField" "field"
+            func="${value}"
+            ${field}=`${func}`
+        done
+
+        GetExpectField "${op_check}"
+        for field in `echo "${expectField}"`
+        do
+            GetExpectFieldFromResp "${res}" "${field}"
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+            field=`echo "${field}" | awk 'BEGIN {FS="\""} {for(i=1;i<=NF;i++){if ($i != "") print $i}}'`
+            rule=`echo "${rule}" | sed -n 's/'${field}'/'${val}'/pg'`
+        done
+
+        if [ ${math} ] ; then
+            val=`"${rule}"`
+        else
+            val=${rule}
+        fi
+        
+        GetExpectValue "${op_check}"
+        if [ "${val}" == "${expectVal}" ]; then
+            return 0
+        else
+            return 1
+        fi
+    fi
 }
 
 function RunOp()
@@ -411,7 +478,25 @@ function RunOp()
     # 判断是否需要状态检查
     PreCheck
     if [ $? -eq 0 ]; then
-        RunCheck
+        time=1
+        RunCheck "${opName}"
+        if [ $? -ne 0 ]; then
+            GetKeyInfo "${opName}_Check" "retryTimes"
+            retrylimit=${value}
+            GetKeyInfo "${opName}_Check" "interval"
+            sleepTime=${value}
+            while [ ${time} -lt ${retrylimit} ]
+            do
+                sleep ${sleepTime}
+                RunCheck "${opName}"
+                if [ $? -ne 0 ]; then
+                    time=$(($time+1))
+                    continue
+                else
+                    break
+                fi
+            done
+        fi
     fi 
 
 
@@ -452,57 +537,5 @@ function Run()
     
 }
 
-
-
-# function main()
-# {
-#     GetKeyInfo "Op" "ops"
-#     ops=`echo ${value} | awk 'BEGIN{FS="[,\"]"} {for (i=1;i<NF;i++) {if ($i != "") print $i}}'`
-    
-#     while true
-#     do
-#         echo "Please input your operation. Support("${ops}"), quit to exit."
-#         read op
-#         if [ "${op}" == "quit" ]; then
-#             break
-#         elif [[ "${ops}" =~ "${op}" ]]; then
-#             #statements
-#             echo "Begin to ${op}..."
-#             GetKeyInfo "${op}" "needRange"
-#             if [ "${value}" == '"true"' ]; then
-#                 echo "please input range, like 10,20."
-#                 read range
-#                 min=`echo "${range}" | awk -F ',' '{print $1}'`
-#                 max=`echo "${range}" | awk -F ',' '{print $2}'`
-#                 ${op} ${min} ${max}
-#             else
-#                 ${op}
-#             fi
-#         else
-#             echo "Operation is not support."
-#         fi
-#     done
-
-#     echo "Closing..."
-# }
-
-# op=$1
-# if [ "X${op}" == "Xcreate" ]; then
-#     CheckAddressInfoFile
-#     CreateUser
-# elif [ "X${op}" == "Xtransfer" ]; then
-#     Transfer
-# elif [ "X${op}" == "Xbuy" ]; then
-#     buystart=$2
-#     BuyKeys $buystart
-# elif [[ "X${op}" == "Xcheck_balance" ]]; then
-#     #statements
-#     checkstart=$2
-#     CheckBalance $checkstart
-# else
-#     echo "Invalid operation."
-# fi
-
-# main
 
 Run

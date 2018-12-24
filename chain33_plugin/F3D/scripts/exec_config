@@ -1,7 +1,7 @@
 # 根据游戏规则的不同，配置不同的策略
 [Run]
-preset=["SaveSeed,Unlock,ImportKey,CreateUser,Start"]
-implement=["Buy,Stop"]
+preset=["Start"]
+implement=[""]
 runtimes=1
 
 [Start]
@@ -10,10 +10,12 @@ param={"round": "inputParam"}
 check="true"
 
 [Start_Check]
+interval=10
+retryTimes=3
 method="Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime"]
-check=$(expectField.remainTime)
+check=expectField.remainTime
 expectVal=""
 
 [Stop]
@@ -23,7 +25,7 @@ check="true"
 
 [Stop_Check]
 method= "Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime", "updateTime"]
 check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
 expectVal="0"
@@ -37,9 +39,9 @@ check="true"
 
 [Buy_Check]
 method="Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": ""}
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime"]
-check=$(expectField.remainTime)
+check=expectField.remainTime
 expectVal=""
 
 # Chain33交易的签名、发送等操作，一般不需要修改
@@ -69,7 +71,7 @@ param={"label": "inputParam"}
 times=1
 
 [CommonField]
-locatime
-startheight
-currentheight
+locatime="common.GetLocalTime"
+startheight=""
+currentheight=""
 starthash=Start.Resp["result"]
