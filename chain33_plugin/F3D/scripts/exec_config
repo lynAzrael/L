@@ -2,12 +2,13 @@
 [Run]
 preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
 implement=["Start,Buy,Stop"]
-runtimes=1
+runtimes=10
 
 [Start]
 method="f3d.F3DStartTx"
 param={"round": "inputParam"}
 check="true"
+recordField=["result"]
 
 [Start_Check]
 interval=10
@@ -26,7 +27,7 @@ check="true"
 
 [Stop_Check]
 interval=10
-retryTimes=60
+retryTimes=70
 method= "Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime", "updateTime"]
@@ -36,8 +37,8 @@ expectVal=0
 
 [Buy]
 method="f3d.F3DBuyKeysTx"
-param={"num": "inputParam", "txhash": "CommonField.starthash"}
-times=1
+param={"num": "inputParam"}
+times=5
 needRange="true"
 check="true"
 
@@ -79,4 +80,4 @@ times=20
 localtime="GetLocalTime"
 startheight=""
 currentheight=""
-starthash=Start.Resp["result"]
+starthash=Start.recordField.

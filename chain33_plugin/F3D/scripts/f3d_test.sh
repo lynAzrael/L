@@ -113,7 +113,6 @@ function Buy()
     buyKeysmethod="${method}"
     GetParamsInfo "Buy"
     RefreshParamInt64 "${param}" "num" "1"
-    RefreshParamString "${param}" "txhash" ""
     buyKeysParamsInfo="[${param}]"
 
     for line in `cat ${addressInfo} | grep -v "^$"`
@@ -125,7 +124,6 @@ function Buy()
             unsignedTx=`echo ${res} | awk -F '"' '{print $6}'`
             address=`echo ${line} | awk -F ':' '{print $2}'`
             Sign ${unsignedTx} ${address}
-            sleep 0.5
         fi
     done
 }
@@ -419,11 +417,6 @@ function PreCheck()
     fi
 }
 
-function StartCheck()
-{
-    return 0
-}
-
 function RunCheck()
 {
     op=$1
@@ -486,10 +479,15 @@ function RunCheck()
         fi
         
         GetExpectValue "${op_check}"
+        `echo $expectVal | grep -q '[^0-9]'`
+        if [ $? -eq 0 ]; then
+            expectVal=`echo ${expectVal} | awk -F '"' '{print $2}'`
+        fi
+
         GetSymbol "${op_check}"
         case ${symbol} in
             "gt")
-            if [ "${val}" == "${expectVal}" ]; then
+            if [ "${val}" -gt "${expectVal}" ]; then
                 return 0
             else
                 return 1
@@ -503,7 +501,7 @@ function RunCheck()
                 fi
         ;;
             "eq")
-                if [ "${val}" -gt "${expectVal}" ]; then
+                if [ "${val}" -eq "${expectVal}" ]; then
                     return 0
                 else
                     return 1
