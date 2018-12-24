@@ -1,7 +1,7 @@
 # 根据游戏规则的不同，配置不同的策略
 [Run]
-preset=["Start"]
-implement=[""]
+preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
+implement=["Start,Buy,Stop"]
 runtimes=1
 
 [Start]
@@ -16,7 +16,8 @@ method="Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime"]
 check=expectField.remainTime
-expectVal=""
+symbol="eq"
+expectVal="0"
 
 [Stop]
 method="f3d.F3DLuckyDrawTx"
@@ -24,11 +25,14 @@ param={"round": "inputParam"}
 check="true"
 
 [Stop_Check]
+interval=10
+retryTimes=60
 method= "Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime", "updateTime"]
 check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
-expectVal="0"
+symbol="lt"
+expectVal=0
 
 [Buy]
 method="f3d.F3DBuyKeysTx"
@@ -42,7 +46,8 @@ method="Chain33.Query"
 param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime"]
 check=expectField.remainTime
-expectVal=""
+symbol="lt"
+expectVal=0
 
 # Chain33交易的签名、发送等操作，一般不需要修改
 [SaveSeed]
@@ -68,10 +73,10 @@ param={"token": "BTY",  "data": "inputParam"}
 [CreateUser]
 method="Chain33.NewAccount"
 param={"label": "inputParam"}
-times=1
+times=20
 
 [CommonField]
-locatime="common.GetLocalTime"
+localtime="GetLocalTime"
 startheight=""
 currentheight=""
 starthash=Start.Resp["result"]

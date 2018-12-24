@@ -10,6 +10,14 @@ addressInfo=".addr_info"
 addrbalanceInfo=".addr_balance_info"
 config_file="exec_config"
 
+function GetLocalTime()
+{
+    current=`date "+%Y-%m-%d %H:%M:%S"`
+    timeStamp=`date -d "$current" +%s`
+
+    echo $timeStamp
+}
+
 function CheckAddressInfoFile()
 {
     if [ -f ${addressInfo} ]; then
@@ -307,7 +315,7 @@ function GetExpectFieldFromResp()
     resp=$1
     key=$2
 
-    val=`echo "${resp}" | awk 'BEGIN {FS="[,:]"} {for (i=1;i<=NF;i++) {if (match($i, '${key}')) print $(i+1)}}'`
+    val=`echo "${resp}" | awk 'BEGIN {FS="[,:{}]"} {for (i=1;i<=NF;i++) {if (match($i, '${key}')) print $(i+1)}}'`
 }
 
 function OperationCheck()
@@ -348,6 +356,13 @@ function GetExpectValue()
     op=$1
     GetKeyInfo "${op}" "expectVal="
     expectVal="${value}"
+}
+
+function GetSymbol()
+{
+    op=$1
+    GetKeyInfo "${op}" "symbol"
+    symbol=`echo "${value}" | awk -F '"' '{print $2}'`
 }
 
 function GetCheckRule()
@@ -440,9 +455,11 @@ function RunCheck()
         commonFields=`echo "$rule" | awk 'BEGIN{FS="[+-/.]"} {for (i=1;i<=NF;i++){if ($i == "CommonField") print $(i+1)}}'`
         for field in `echo "${commonFields}"`
         do
-            GetKeyInfo "CommonField" "field"
-            func="${value}"
-            ${field}=`${func}`
+            GetKeyInfo "CommonField" "${field}"
+            func=`echo "${value}" | awk -F '"' '{print $2}'`
+            val=`${func}`
+
+            rule=`echo "${rule}" | sed -n 's/'CommonField.${field}'/'${val}'/pg'`
         done
 
         GetExpectField "${op_check}"
@@ -452,22 +469,50 @@ function RunCheck()
             if [ $? -ne 0 ]; then
                 return 1
             fi
+
+            `echo $val | grep -q '[^0-9]'`
+            if [ $? -eq 0 ]; then
+                val=`echo ${val} | awk -F '"' '{print $2}'`
+            fi
+
             field=`echo "${field}" | awk 'BEGIN {FS="\""} {for(i=1;i<=NF;i++){if ($i != "") print $i}}'`
             rule=`echo "${rule}" | sed -n 's/'${field}'/'${val}'/pg'`
         done
 
         if [ ${math} ] ; then
-            val=`"${rule}"`
+            val=$((${rule}))
         else
             val=${rule}
         fi
         
         GetExpectValue "${op_check}"
-        if [ "${val}" == "${expectVal}" ]; then
-            return 0
-        else
+        GetSymbol "${op_check}"
+        case ${symbol} in
+            "gt")
+            if [ "${val}" == "${expectVal}" ]; then
+                return 0
+            else
+                return 1
+            fi
+        ;;
+            "lt")
+                if [ "${val}" -lt "${expectVal}" ]; then
+                    return 0
+                else
+                    return 1
+                fi
+        ;;
+            "eq")
+                if [ "${val}" -gt "${expectVal}" ]; then
+                    return 0
+                else
+                    return 1
+                fi
+        ;;
+            *)
             return 1
-        fi
+        ;;
+        esac
     fi
 }
 
