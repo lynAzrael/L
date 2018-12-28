@@ -177,33 +177,29 @@ message ReceiptBonusInfo {
 |bonus|float|奖池中累积的全部奖金|
 |count|int32|游戏累积参与人数|
 
-## 3 配置
+## 3 奖池维护
+在计算用户投注的奖金之前，对奖池剩余金额进行检测。
+
+检测到奖池中的奖金超过最大额度时，将从奖池取出部分额度转入平台的账户地址中;当奖池奖金低于最小额度时，从平台账户中往奖池中转入指定额度。
+
+## 4 配置
 ```toml
-# 管理员地址
-managerAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+# 平台地址
+platFormAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
 
 # 奖池地址
 poolAddr="j4pFNSjfemZOyn37A1Cnt2FrEq"
 
 # 用于生成随机的块数
 randLuckyBlockNum=5
-```
 
-## 4 奖池维护
-在每次用户投注之后，对奖金剩余金额进行检测。
-
-检测到奖池中的奖金超过最大额度时，将从奖池取出部分额度转入平台的账户地址中;当奖池奖金低于最小额度时，从平台账户中往奖池中转入指定额度。
-
-最大额度，最小额度均可配置.
-
->当奖池的奖金不符合超出时，是否需要禁止用户继续投注？
-
-### 4.1 奖池维护配置项
+# 奖池最大额度
 maxBonus=100000
-outTransfer=50000
+# 奖池最小额度
 minBonus=500
-supplementTransfer=500
 
-bonusPoolAddr=""
-platformAddr=""
-
+# 奖池金额溢出，转出到平台账户的额度
+bonusToPlatform=50000
+# 奖池金额不足，从平台账户转入的额度
+platformToBonus=500
+```
