@@ -59,25 +59,25 @@ message BetInfo {
 ```proto
 // 用户投注信息批量查询
 message QueryBetInfo {
-	string addr = 1;
-	int32 startIdx = 2;
-	int32 endIdx = 3;
+    string addr = 1;
+    int32 startIdx = 2;
+    int32 endIdx = 3;
 }
 
 // 奖金信息查询
 message QueryRewardInfo {
-	string addr = 1;
-	int32 idx = 2;
+    string addr = 1;
+    int32 idx = 2;
 }
 
 // 当前奖池信息查询
 message QueryBonusInfo {
-	
+    
 }
 
 // 用户投注次数查询
 message QueryBetTimes {
-	string addr = 1;
+    string addr = 1;
 }
 ```
 
@@ -85,7 +85,7 @@ message QueryBetTimes {
 ```proto
 // 奖金信息
 message RewardInfo{
-   	repeated int32 randNum = 1;
+    repeated int32 randNum = 1;
     float bouns = 2;
 }
 
@@ -97,7 +97,7 @@ message BonusInfo {
 
 // 投注次数信息
 message BetTimes {
-	int32 times = 1;
+    int32 times = 1;
 }
 ```
 
