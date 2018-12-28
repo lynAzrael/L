@@ -182,7 +182,10 @@ message ReceiptBonusInfo {
 
 检测到奖池中的奖金超过最大额度时，将从奖池取出部分额度转入平台的账户地址中;当奖池奖金低于最小额度时，从平台账户中往奖池中转入指定额度。
 
-## 4 配置
+## 4 整体流程
+![Feel lucky] (https://github.com/lynAzrael/L/blob/master/chain33_plugin/flucky/resources/flucky_process.png)
+
+## 5 配置
 ```toml
 # 平台地址
 platFormAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
