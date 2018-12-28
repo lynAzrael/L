@@ -17,6 +17,7 @@ message BonusInfo {
 ```
 
 |key|val|说明|
+|----|----|----|
 |mavl-flucky-user-times:{address}|BetInfo|用户购买次数|
 |mavl-flucky-bonul-info|BonusInfo|当前奖池信息|
 
@@ -34,6 +35,7 @@ message BetInfo {
 ```
 
 |key|val|说明|
+|----|----|----|
 |LODB-flucky-user-history:{address}:{idx}|BetInfo|用户投注信息|
 
 
