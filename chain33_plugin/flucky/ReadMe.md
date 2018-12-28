@@ -101,7 +101,7 @@ message ReceiptBonusInfo {
 ### 2.4 用户接口
 #### 2.4.1 创建投注交易
 请求结构：
-```json
+```bash
 {
     "amount":int32
 }
@@ -112,7 +112,7 @@ message ReceiptBonusInfo {
 |amount|int32|用户投注的金额|
 
 返回结构:
-```json
+```bash
 {
     "randNum":[int32],
     "bonus":float
@@ -125,7 +125,7 @@ message ReceiptBonusInfo {
 
 #### 2.4.2 获取用户投注信息
 请求结构：
-```json
+```bash
 {
     "addr":string,
     "startIndex":int32,
@@ -139,7 +139,7 @@ message ReceiptBonusInfo {
 |endIndex|int32|投注信息的结束index|
 
 响应结构：
-```json
+```bash
 {
     [
         {
@@ -164,7 +164,7 @@ message ReceiptBonusInfo {
 
 #### 2.4.3 奖池信息
 响应结构:
-```json
+```bash
 {
     "bonus":float,
     "count":int32,
