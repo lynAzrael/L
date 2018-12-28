@@ -210,8 +210,8 @@ message ReceiptBonusInfo {
 |[9501,9900]|奖池的1%|
 |[9901,9950]|奖池的5%|
 |[9951,9990]|奖池的10%|
-|[9991,9999]|奖池的20%|
-|10000|奖池的50%|
+|[9991,9999)|奖池的20%|
+|9999|奖池的50%|
 
 ### 3.2 投入分成比例
 以1个BTY为基本投注单位，获取一次抽奖机会；
@@ -239,8 +239,6 @@ message ReceiptBonusInfo {
 ```toml
 # 平台地址
 platFormAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
-# 奖池地址
-poolAddr="j4pFNSjfemZOyn37A1Cnt2FrEq"
 
 # 用于生成随机的块数
 randLuckyBlockNum=5
