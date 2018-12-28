@@ -26,7 +26,7 @@ message BonusInfo {
 ```proto
 // 用户投注信息
 message BetInfo {
-	int32 index = 1;
+    int32 index = 1;
     uint64 time = 2;
     int32 amount = 3;
     repeated int32 randNum = 4;
@@ -50,6 +50,7 @@ message BetInfo {
 ```
 
 |字段|类型|说明|
+|----|----|----|
 |amount|int32|投注的数量|
 
 
