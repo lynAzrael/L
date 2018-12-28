@@ -4,13 +4,11 @@
 ### 1.1 statedb
 
 ```proto
-// 
-message UserBetInfo {
-	int32 times = 1;
+// 投注信息
+message BetInfo {
+	int32 index = 1;
 }
-```
 
-```proto
 // 当前奖池信息
 message BonusInfo {
 	int32 userCount = 1;
@@ -19,7 +17,7 @@ message BonusInfo {
 ```
 
 |key|val|说明|
-|mavl-flucky-user-times:{address}|UserBetInfo|用户购买次数|
+|mavl-flucky-user-times:{address}|BetInfo|用户购买次数|
 |mavl-flucky-bonul-info|BonusInfo|当前奖池信息|
 
 ### 1.2 localdb
@@ -44,7 +42,7 @@ message BetInfo {
 
 ```proto
 // 投注
-message UserBetInfo {
+message BetInfo {
     int32 index = 1;
 }
 ```
