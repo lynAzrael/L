@@ -6,13 +6,13 @@
 ```proto
 // 投注信息
 message BetReq {
-	int32 index = 1;
+    int32 index = 1;
 }
 
 // 当前奖池信息
 message BonusInfo {
-	int32 userCount = 1;
-	float bonusPool = 2; 
+    int32 userCount = 1;
+    float bonusPool = 2; 
 }
 ```
 
@@ -67,8 +67,8 @@ message QueryBetInfoBatch {
 }
 
 message QueryBetInfo {
-	string addr = 1;
-	int32 idx = 2;
+    string addr = 1;
+    int32 idx = 2;
 }
 
 message QueryBetTimes {
@@ -80,7 +80,7 @@ message QueryBetTimes {
 ```proto
 // 投注信息响应
 message ReceiptBetInfo {
-	BetInfo bet = 1;
+    BetInfo bet = 1;
 }
 
 message ReceiptBetInfoBatch {
@@ -100,9 +100,8 @@ message ReceiptBonusInfo {
 
 ### 2.4 用户接口
 #### 2.4.1 创建投注交易
-使用CreateTransaction接口
 请求结构：
-```bash
+```json
 {
     "amount":int32
 }
@@ -113,7 +112,7 @@ message ReceiptBonusInfo {
 |amount|int32|用户投注的金额|
 
 返回结构:
-```bash
+```json
 {
     "randNum":[int32],
     "bonus":float
@@ -126,7 +125,7 @@ message ReceiptBonusInfo {
 
 #### 2.4.2 获取用户投注信息
 请求结构：
-```bash
+```json
 {
     "addr":string,
     "startIndex":int32,
@@ -140,7 +139,7 @@ message ReceiptBonusInfo {
 |endIndex|int32|投注信息的结束index|
 
 响应结构：
-```bash
+```json
 {
     [
         {
@@ -165,10 +164,10 @@ message ReceiptBonusInfo {
 
 #### 2.4.3 奖池信息
 响应结构:
-```bash
+```json
 {
-	"bonus":float,
-	"count":int32,
+    "bonus":float,
+    "count":int32,
 }
 ```
 
@@ -183,7 +182,7 @@ message ReceiptBonusInfo {
 检测到奖池中的奖金超过最大额度时，将从奖池取出部分额度转入平台的账户地址中;当奖池奖金低于最小额度时，从平台账户中往奖池中转入指定额度。
 
 ## 4 整体流程
-![Feel lucky] (https://github.com/lynAzrael/L/blob/master/chain33_plugin/flucky/resources/flucky_process.png)
+![Feel Lucky](https://github.com/lynAzrael/L/blob/master/chain33_plugin/flucky/resources/flucky_process.png)
 
 ## 5 配置
 ```toml
