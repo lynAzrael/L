@@ -27,7 +27,7 @@ message BonusInfo {
 // 用户投注信息
 message BetInfo {
     int32 index = 1;
-	string addr = 2;
+    string addr = 2;
     uint64 time = 3;
     int32 amount = 4;
     repeated int32 randNum = 5;
@@ -186,7 +186,6 @@ message ReceiptBonusInfo {
 ```toml
 # 平台地址
 platFormAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
-
 # 奖池地址
 poolAddr="j4pFNSjfemZOyn37A1Cnt2FrEq"
 
