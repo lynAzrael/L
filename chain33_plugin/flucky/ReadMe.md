@@ -27,7 +27,7 @@
 ```proto
 // 投注信息
 message BetReq {
-    int32 index = 1;
+    int32 amount = 1;
 }
 
 // 当前奖池信息
@@ -240,9 +240,6 @@ message ReceiptBonusInfo {
 # 平台地址
 platFormAddr="14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
 
-# 用于生成随机的块数
-randLuckyBlockNum=5
-
 # 奖池最大额度
 maxBonus=100000
 # 奖池最小额度
@@ -253,3 +250,11 @@ bonusToPlatform=50000
 # 奖池金额不足，从平台账户转入的额度
 platformToBonus=500
 ```
+
+## 6 随机数生成方案
+由于此游戏合约的需要生成随机数的频率较高且一次有可能需要多个随机数，因此不太适合采用ticket中的随机数生成器。暂时使用如下方案，后续如有更优方法可以进行替换。
+
+### 6.1 使用交易相关信息构造
+对交易的哈希txHash，以及交易所处位置index以及区块的打包时间blocktime上述三个变量之和进行哈希之后，再取模，生成一个[0,10000)范围内的数字。
+
+当需要生成多个随机数时，则使用上一次生成的随机数与index做运算后的结果作为新的index。
