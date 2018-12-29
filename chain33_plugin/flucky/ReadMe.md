@@ -26,8 +26,8 @@
 
 ```proto
 // 投注信息
-message BetTimes {
-    int32 times = 1;
+message BetReq {
+    int32 index = 1;
 }
 
 // 当前奖池信息
