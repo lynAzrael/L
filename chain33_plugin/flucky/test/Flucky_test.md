@@ -183,7 +183,6 @@
 
 ```bash
 [azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetTimes", "payload":{"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
-
 {"id":1,"result":{"times":10},"error":null}
 
 ```
@@ -192,6 +191,5 @@
 
 ```bash
 [azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetInfo", "payload":{"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt", "idx": 10}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
-
 {"id":1,"result":{"index":10,"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt","time":"1546047584","amount":5,"randNum":["9799","5131","6349","2379","9777","6909","8588","1273","5993","2009"],"maxNum":"9799","bonus":0.2925797},"error":null}
 ```
