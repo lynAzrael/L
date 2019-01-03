@@ -1,0 +1,83 @@
+# 根据游戏规则的不同，配置不同的策略
+[Run]
+preset=["SaveSeed","Unlock","ImportKey","CreateUser"]
+implement=["Buy"]
+runtimes=10
+
+[Start]
+method="f3d.F3DStartTx"
+param={"round": "inputParam"}
+check="true"
+recordField=["result"]
+
+[Start_Check]
+interval=10
+retryTimes=3
+method="Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
+expectField=["remainTime"]
+check=expectField.remainTime
+symbol="eq"
+expectVal="0"
+
+[Stop]
+method="f3d.F3DLuckyDrawTx"
+param={"round": "inputParam"}
+check="true"
+
+[Stop_Check]
+interval=10
+retryTimes=70
+method= "Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
+expectField=["remainTime", "updateTime"]
+check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
+symbol="lt"
+expectVal=0
+
+[Buy]
+method="Chain33.CreateTransaction"
+param={"execer": "flucky", "actionName": "Bet", "payload": {"amount": 10}}
+times=5
+needRange="false"
+check="false"
+
+[Buy_Check]
+method="Chain33.Query"
+param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
+expectField=["remainTime"]
+check=expectField.remainTime
+symbol="lt"
+expectVal=0
+
+# Chain33交易的签名、发送等操作，一般不需要修改
+[SaveSeed]
+method="Chain33.SaveSeed"
+param={"seed": "lens involve pudding midnight climb depend alcohol sibling carpet ghost garment child faith upper runway", "passwd": "fzm"}
+
+[ImportKey]
+method="Chain33.ImportPrivkey"
+param={"privkey": "CC38546E9E659D15E6B4893F0AB32A06D103931A8230B0BDE71459D2B27D6944", "label": "manager"}
+
+[Unlock]
+method="Chain33.UnLock"
+params={"passwd": "fzm"}
+
+[Sign]
+method="Chain33.SignRawTx"
+param={"addr": "inputParam", "txHex": "inputParam",  "expire": "0"}
+
+[Send]
+method="Chain33.SendTransaction"
+param={"token": "BTY",  "data": "inputParam"}
+
+[CreateUser]
+method="Chain33.NewAccount"
+param={"label": "inputParam"}
+times=20
+
+[CommonField]
+localtime="GetLocalTime"
+startheight=""
+currentheight=""
+starthash=Start.recordField.
