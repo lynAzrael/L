@@ -31,7 +31,7 @@
 ```toml
 [Run]
 preset=["SaveSeed,Unlock,ImportKey,CreateUser"]
-implement=["Start,Buy,Stop"]
+implement=["Buy"]
 runtimes=1
 ```
 
