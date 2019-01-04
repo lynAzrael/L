@@ -4,37 +4,6 @@ preset=["SaveSeed","Unlock","ImportKey","CreateUser"]
 implement=["Buy"]
 runtimes=10
 
-[Start]
-method="f3d.F3DStartTx"
-param={"round": "inputParam"}
-check="true"
-recordField=["result"]
-
-[Start_Check]
-interval=10
-retryTimes=3
-method="Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
-expectField=["remainTime"]
-check=expectField.remainTime
-symbol="eq"
-expectVal="0"
-
-[Stop]
-method="f3d.F3DLuckyDrawTx"
-param={"round": "inputParam"}
-check="true"
-
-[Stop_Check]
-interval=10
-retryTimes=70
-method= "Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
-expectField=["remainTime", "updateTime"]
-check=$(expectField.remainTime+expectField.updateTime-CommonField.localtime)
-symbol="lt"
-expectVal=0
-
 [Buy]
 method="Chain33.CreateTransaction"
 param={"execer": "flucky", "actionName": "Bet", "payload": {"amount": 10}}
@@ -44,7 +13,7 @@ check="false"
 
 [Buy_Check]
 method="Chain33.Query"
-param={"execer": "f3d", "funcName": "QueryLastRoundInfo", "payload": {}}
+param={"execer": "flucky", "funcName": "QueryLastRoundInfo", "payload": {}}
 expectField=["remainTime"]
 check=expectField.remainTime
 symbol="lt"
@@ -74,10 +43,7 @@ param={"token": "BTY",  "data": "inputParam"}
 [CreateUser]
 method="Chain33.NewAccount"
 param={"label": "inputParam"}
-times=20
+times=100
 
 [CommonField]
 localtime="GetLocalTime"
-startheight=""
-currentheight=""
-starthash=Start.recordField.
