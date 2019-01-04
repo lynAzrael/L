@@ -1,7 +1,8 @@
 # Flucky测试
 
-## 1 投注操作
 
+## 1 功能测试
+### 1.1 投注操作
 
 ```bash
 [azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetTimes", "payload":{"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
@@ -179,7 +180,7 @@
 
 ```
 
-## 2 查询用户投注次数
+### 1.2 查询用户投注次数
 
 ```bash
 [azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetTimes", "payload":{"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
@@ -187,9 +188,23 @@
 
 ```
 
-## 3 查询用户投注信息
+### 1.3 查询用户投注信息
 
 ```bash
 [azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetInfo", "payload":{"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt", "idx": 10}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
 {"id":1,"result":{"index":10,"addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt","time":"1546047584","amount":5,"randNum":["9799","5131","6349","2379","9777","6909","8588","1273","5993","2009"],"maxNum":"9799","bonus":0.2925797},"error":null}
 ```
+
+### 1.4 批量查询查询用户投注信息
+
+```bash
+[azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBetInfoBatch", "payload":{"addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef", "index": 0, "count": 3, "direction": 0}}]} '         -H 'content-type:text/plain;'         http://localhost:8801
+{"id":1,"result":{"bets":[{"index":"4","addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef","time":"1546592716","amount":"10","randNum":["9699","742","644","9195","5511","7407","909","6013","9404","6813"],"maxNum":"9699","bonus":7.6438},{"index":"3","addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef","time":"1546592656","amount":"5","randNum":["1341","8228","1014","371","225","2023","3140","1211","3876","9755","7726","9831"],"maxNum":"9831","bonus":7.62},{"index":"2","addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef","time":"1546589846","amount":"5","randNum":["215","8803","4368","8273","5465","2357","9987","459","9999","6073"],"maxNum":"9999","bonus":257}]},"error":null}
+```
+### 1.5 查询奖池信息
+
+```bash
+[azrael@localhost build]$ curl --data-binary '{"jsonrpc":"2.0", "id": 1, "method":"Chain33.Query","params":[{"execer":"flucky", "funcName":"QueryBonusInfo"}]} '         -H 'content-type:text/plain;'         http://localhost:8801
+{"id":1,"result":{"userCount":1,"bonusPool":756.7362},"error":null}
+```
+
