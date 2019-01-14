@@ -224,3 +224,47 @@
 |----|----|----|
 |userCount|int|奖池中的用户数量|
 |bonusPool|int|奖池中累计的奖金数量|
+
+
+### 2.4 用户投注次数查询
+
+请求报文
+
+```json
+{
+    "jsonrpc":"2.0", 
+    "id": 1, 
+    "method":"Chain33.Query",
+    "params":[{
+        "execer":"flucky", 
+        "funcName":"QueryBetTimes", 
+        "payload":{
+            "addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt"
+        }
+    }]
+} 
+```
+
+参数说明
+
+|参数|类型|说明|
+|----|----|----|
+|addr|string|查询的用户地址|
+
+响应报文
+```json
+{
+    "id":1,
+    "result":{
+        "times":10
+    },
+    "error":null
+}
+```
+
+参数说明
+
+|参数|类型|说明|
+|----|----|----|
+|times|int|用户投注的总次数|
+
