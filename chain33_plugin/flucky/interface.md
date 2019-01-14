@@ -16,13 +16,16 @@
 
 ```json
 {
-    "jsonrpc": "2.0",
-    "method":"flucky.FluckyBetTx",
-    "params":[
-    {
-        "amount":1
-    }],
-    "id":0
+    "jsonrpc":"2.0", 
+    "id": 1, 
+    "method":"Chain33.CreateTransaction",
+    "params":[{
+        "execer":"flucky", 
+        "actionName":"Bet", 
+        "payload":{
+            "amount":5
+        }
+    }]
 }
 ```
 参数说明
