@@ -209,7 +209,8 @@
     "id":1,
     "result":{
         "userCount":1,
-        "bonusPool":756.7362},
+        "bonusPool":756.7362
+    },
     "error":null
 }
 ```
