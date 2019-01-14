@@ -109,7 +109,7 @@
 |amount|int|用户投注的额度|
 |randNum|string数组|用户本次抽奖获取到的随机数|
 |maxNum|string|用户本次获取到的最大随机数|
-|bonus|int|用户本次获取到的奖金|
+|bonus|float|用户本次获取到的奖金|
 
 ### 2.2 用户投注信息批量查询
 **根据指定的起始index,addr,count,direction等信息批量查询用户信息**
@@ -191,7 +191,7 @@
 |amount|int|用户投注的额度|
 |randNum|string数组|用户本次抽奖获取到的随机数|
 |maxNum|string|用户本次获取到的最大随机数，用于计算奖金|
-|bonus|int|用户本次获取到的奖金|
+|bonus|float|用户本次获取到的奖金|
 
 
 
