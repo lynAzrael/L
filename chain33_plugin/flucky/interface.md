@@ -81,19 +81,14 @@
 {
     "id":1,
     "result":{
-        "index":10,
-        "addr":"14KEKbYtKKQm4wMthSK9J4La4nAiidGozt",
-        "time":"1546047584",
-        "amount":5,
-        "randNum":[
-            "9799",
-            "5131",
-            "6349",
-            "2379",
-            "9777",
-        ],
-        "maxNum":"9799",
-        "bonus":0.2925797
+        "index":"10",
+        "addr":"1Gk428DWuhg9kpUJtoNLCadjCLsgiDLGMU",
+        "time":"1548063710",
+        "amount":"5",
+        "randNum":["6029"],
+        "maxNum":"6029",
+        "bonus":2.5,
+        "action":"3300"
     },
     "error":null
 }
