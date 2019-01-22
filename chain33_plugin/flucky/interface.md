@@ -145,31 +145,34 @@
     "id":1,
     "result":{
         "bets":[{
-            "index":"4",
-            "addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef",
-            "time":"1546592716",
-            "amount":"10",
-            "randNum":["9699","742","644","9195","5511","7407","909","6013","9404","6813"],
-            "maxNum":"9699",
-            "bonus":7.6438
+            "index":"13756",
+            "addr":"1Gk428DWuhg9kpUJtoNLCadjCLsgiDLGMU",
+            "time":"1485051134",
+            "amount":"5",
+            "randNum":["2183"],
+            "maxNum":"2183",
+            "bonus":1,
+            "action":"3300"
         },
         {
-            "index":"3",
-            "addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef",
-            "time":"1546592656",
+            "index":"13755",
+            "addr":"1Gk428DWuhg9kpUJtoNLCadjCLsgiDLGMU",
+            "time":"1485051134",
             "amount":"5",
-            "randNum":["1211","3876","9755","7726","9831"],
-            "maxNum":"9831",
-            "bonus":7.62
+            "randNum":["5504"],
+            "maxNum":"5504",
+            "bonus":2.5,
+            "action":"3300"
         },
         {
-            "index":"2",
-            "addr":"1ZdRvtXY2FAa79BaM12owHMJGK9w4S8Ef",
-            "time":"1546589846",
+            "index":"13754",
+            "addr":"1Gk428DWuhg9kpUJtoNLCadjCLsgiDLGMU",
+            "time":"1485051134",
             "amount":"5",
-            "randNum":["2357","9987","459","9999","6073"],
-            "maxNum":"9999",
-            "bonus":257
+            "randNum":["1082"],
+            "maxNum":"1082",
+            "bonus":1,
+            "action":"3300"
         }]
     },
     "error":null
