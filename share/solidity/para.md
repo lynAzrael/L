@@ -4,7 +4,8 @@
 ### 1.1 手工编译
 切换到如下路径：${GoPath}/src/github.com/33cn
 
-GoPath为安装Go编译器之后的环境变量，如果未安装Go，请
+GoPath为安装Go编译器之后的环境变量，如果未安装Go，请参考环境准备中的 [Go环境安装](https://chain.33.cn/document/81#1.1%20Go%20%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85)
+
 除GoPath之外的其他子目录如果不存在，请手工创建。
 
 获取最新Chain33代码分支进行编译，github地址：git@github.com:33cn/plugin.git
