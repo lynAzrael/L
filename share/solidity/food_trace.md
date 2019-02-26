@@ -41,11 +41,11 @@
 
 ![remix_compile](https://github.com/lynAzrael/L/blob/master/share/img/remix_compile.png)
 
-* 由于remix生成的abi存在换行、空格等字符，chain33实现的evm不能直接使用，还需要进行进一步的格式化操作：去除换行、空格。
+* remix生成的abi存在换行、空格等字符，chain33实现的evm不能直接使用，还需要进行进一步的格式化操作：去除换行、空格。
 
-* 由于Chrome浏览器不支持编译后abi、bin文件的拷贝，因此尽量使用Edge或者IE浏览器。
+* Chrome浏览器不支持编译后abi、bin文件的拷贝，尽量使用Edge或者IE浏览器。
 
-考虑到以上两点，因此推荐使用Intellij-Solidity插件进行编译。
+考虑到以上两点，推荐使用Intellij-Solidity插件进行编译。
 
 注意： 
 * 在合约中定义结构体时：
