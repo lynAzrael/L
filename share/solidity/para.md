@@ -8,18 +8,37 @@
 <!-- /TOC -->
 
 ## 1.1 手工编译
-切换到如下路径：${GoPath}/src/github.com/33cn
+切换到如下路径：
+
+```bash
+cd ${GoPath}/src/github.com/33cn
+```
 
 GoPath为安装Go编译器之后的环境变量，如果未安装Go，请参考环境准备中的[Go环境安装](https://chain.33.cn/document/81#1.1%20Go%20%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85)
 
 除GoPath之外的其他子目录如果不存在，请手工创建。
 
-获取最新Chain33代码分支进行编译，github地址：git@github.com:33cn/plugin.git
+获取最新Chain33代码分支进行编译，
+```bash
+git clone git@github.com:33cn/plugin.git
+```
+
 
 linux下编译
-
+```bash
+cd plugin && make
+```
 windos下编译
 
+使用cmd
+```bash
+cd plugin && build.bat
+```
+
+使用powershell
+```bash
+(cd .\plugin) -or (.\build.bat)
+```
 
 
 ## 1.2 使用官方版本
