@@ -7,58 +7,22 @@
 
 <!-- /TOC -->
 
-## 1.1 手工编译
-切换到如下路径：
-
-```bash
-cd ${GoPath}/src/github.com/33cn
-```
-
-GoPath为安装Go编译器之后的环境变量，如果未安装Go，请参考环境准备中的[Go环境安装](https://chain.33.cn/document/81#1.1%20Go%20%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85)
-
-除GoPath之外的其他子目录如果不存在，请手工创建。
-
-获取最新Chain33代码分支进行编译，
-```bash
-git clone git@github.com:33cn/plugin.git
-```
-
-
-linux下编译
-```bash
-cd plugin && make
-```
-windos下编译
-
-使用cmd
-```bash
-cd plugin && build.bat
-```
-
-使用powershell
-```bash
-(cd .\plugin) -or (.\build.bat)
-```
-
-
-## 1.2 使用官方版本
-
-获取文件
+## 
+### 1 获取文件
 ```bash 
 wget https://bty.oss-ap-southeast-1.aliyuncs.com/chain33/paraChain.tar.gz
 ```
 
-解压
+### 2 解压
 ```bash
 tar zxvf paraChain.tar.gz
 ```
 
-修改配置文件
+### 3 配置文件修改
 
 ```bash
 vi paraChain/chain33.para.toml
 ```
-
 
 ParaRemoteGrpcClient项取值为："101.37.227.226:8802,39.97.20.242:8802,47.107.15.126:8802,jiedian2.33.cn"
 
@@ -76,3 +40,38 @@ mainnetJrpcAddr项取值为："http://jiedian1.33.cn:8801"
 ```bash
 cd paraChain && ./chain33 -f chain33.para.toml
 ```
+
+如果有代码改动，可以使用本地编译的二进制文件
+
+## 手工编译
+### 1 切换路径
+
+```bash
+cd ${GoPath}/src/github.com/33cn
+```
+
+>GoPath为安装Go编译器之后的环境变量，如果未安装Go，请参考环境准备中的[Go环境安装](https://chain.33.cn/document/81#1.1%20Go%20%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85)
+
+>除GoPath之外的其他子目录如果不存在，请手工创建。
+
+### 2 获取最新Chain33代码分支进行编译
+```bash
+git clone git@github.com:33cn/plugin.git
+```
+#### 2.1 linux下编译
+```bash
+cd plugin && make
+```
+#### 2.2 windows下编译
+cmd模式使用如下指令：
+
+```bash
+cd plugin && build.bat
+```
+
+powershell使用如下指令：
+
+```bash
+(cd .\plugin) -or (.\build.bat)
+```
+
