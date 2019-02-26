@@ -7,7 +7,7 @@
 
 <!-- /TOC -->
 
-## 
+## 官方版本（仅支持类linux环境）
 ### 1 获取文件
 ```bash 
 wget https://bty.oss-ap-southeast-1.aliyuncs.com/chain33/paraChain.tar.gz
@@ -19,10 +19,6 @@ tar zxvf paraChain.tar.gz
 ```
 
 ### 3 配置文件修改
-
-```bash
-vi paraChain/chain33.para.toml
-```
 
 ParaRemoteGrpcClient项取值为："101.37.227.226:8802,39.97.20.242:8802,47.107.15.126:8802,jiedian2.33.cn"
 
@@ -36,14 +32,13 @@ mainnetJrpcAddr项取值为："http://jiedian1.33.cn:8801"
 ![mainnetJrpcAddr](https://github.com/lynAzrael/L/blob/master/share/img/mainnetJrpcAddr.png)
 
 启动chain33进程
-
 ```bash
 cd paraChain && ./chain33 -f chain33.para.toml
 ```
 
-如果有代码改动，可以使用本地编译的二进制文件
+由于官方提供的bin文件仅支持类linux环境，因此windows环境下需要[本地编译](#-本地编译)二进制文件。
 
-## 手工编译
+## 本地编译
 ### 1 切换路径
 
 ```bash
