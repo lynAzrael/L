@@ -121,6 +121,20 @@ contract Food {
         FoodList[index] = item;
     }
 
+    function updateShopDate(string memory _id, uint _shopDate) public {
+        uint index = getFoodIndexByID(_id);
+        FoodInfo memory item = FoodList[index];
+        item.shopDate = _shopDate;
+        FoodList[index] = item;
+    }
+
+    function updateScore(string memory _id, uint _score) public {
+        uint index = getFoodIndexByID(_id);
+        FoodInfo memory item = FoodList[index];
+        item.score = _score;
+        FoodList[index] = item;
+    }
+
     function getFoodIndexByID(string memory _id) public view returns (uint) {
         uint _index;
         for (uint index = 0; index < getFoodNumber(); index++) {
@@ -153,5 +167,9 @@ contract Food {
         CheckInfo memory item = CheckInfo(_creator, _foodId, _checkDate, _checkRes, _checkDesc);
         CheckInfoList[chekcinfo_num] = item;
         chekcinfo_num++;
+    }
+
+    function getCheckInfoNumber() public view returns (uint) {
+        return chekcinfo_num;
     }
 }
