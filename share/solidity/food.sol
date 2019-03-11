@@ -99,7 +99,7 @@ contract Food {
     // FoodInfo 相关操作 ========================================
     // 添加商品信息
     function addFoodInfo(address _creator, string memory _id, string memory _name, uint _volume, uint _producedDate, uint _packageDate, uint _expireTime,
-        string memory _pigId, uint _checkDate, string memory _checkRes, string memory _checkDesc, uint _shopDate, uint _score) public {
+        string memory _pigId, uint _shopDate, uint _score) public {
         FoodInfo memory item = FoodInfo(_creator, _id, _name, _volume, _producedDate, _packageDate, _expireTime, _pigId, _shopDate, _score);
         FoodList[food_num] = item;
         food_num = food_num + 1;
@@ -107,7 +107,7 @@ contract Food {
 
     // 修改商品
     function updateFoodInfoByIndex(string memory _id, string memory _name, uint _volume, uint _producedDate, uint _packageDate, uint _expireTime, string memory _pigId,
-        uint _checkDate, string memory _checkRes, string memory _checkDesc, uint _shopDate, uint _score) public {
+        uint _shopDate, uint _score) public {
         uint index = getFoodIndexByID(_id);
         FoodInfo memory item = FoodList[index];
         item.name = _name;
@@ -171,5 +171,28 @@ contract Food {
 
     function getCheckInfoNumber() public view returns (uint) {
         return chekcinfo_num;
+    }
+
+    function getCheckInfoIndexByID(string memory _foodId)  public view returns (uint) {
+        uint _index;
+        for (uint index = 0; index < getCheckInfoNumber(); index++) {
+            CheckInfo memory item = CheckInfoList[index];
+            bool isEqual = utilCompareInternal(_foodId, item.foodId);
+            if (isEqual)
+                _index = index;
+        }
+        return _index;
+    }
+
+    function getCheckInfoByIndex(uint _index)public view returns (address , string memory foodId, uint checkDate,
+        string memory checkRes, string memory checkDesc) {
+        CheckInfo memory item = CheckInfoList[_index];
+        return (item.Creator, item.foodId, item.checkDate, item.checkRes, item.checkDesc);
+    }
+
+    function getCheckInfoByID(string memory _id) public view returns (address , string memory foodId, uint checkDate,
+        string memory checkRes, string memory checkDesc) {
+        uint index = getFoodIndexByID(_id);
+        return getCheckInfoByIndex(index);
     }
 }
