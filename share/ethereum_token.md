@@ -26,7 +26,7 @@
 ## 测试币的获取
 [https://www.rinkeby.io/#faucet](https://www.rinkeby.io/#faucet)
 
-使用收币地址生成链接
+使用收币地址生成public gist链接
 
 ![](https://github.com/lynAzrael/L/blob/master/share/img/create_public_gist.png)
 
