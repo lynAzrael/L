@@ -53,6 +53,10 @@
 |tokenName|ASD|
 |tokenSymbol|asd|
 
+合约的部署
+
+![](https://github.com/lynAzrael/L/blob/master/share/img/deploy_contract.png)
+
 部署合约的交易
 
 ![](https://github.com/lynAzrael/L/blob/master/share/img/contract_transfer_tx.png)
@@ -66,8 +70,16 @@
 ![contract_tx_detail](https://github.com/lynAzrael/L/blob/master/share/img/contract_tx_detail.png)
 
 
+成功部署之后，可以在remix上查看合约的地址以及支持的操作
 
-### 合约调用
+![deployed_contract](https://github.com/lynAzrael/L/blob/master/share/img/deployed_contract_info.png)
+
+将合约地址添加到MetaMask的钱包中，可以看到创建的token
+
+![](https://github.com/lynAzrael/L/blob/master/share/img/add_token_by_contract_address.png)
+
+![](https://github.com/lynAzrael/L/blob/master/share/img/token_info_in_metamask.png)
+
 
 
 
