@@ -199,7 +199,7 @@ contract MsnCoin is StandardToken {
 ```
 
 ### 合约部署
-使用remix进行合约的编译以及部署
+使用[remix](remix.ethereum.org)进行合约的编译以及部署
 
 ![compile contract](https://github.com/lynAzrael/L/blob/master/share/img/contract_compile.png)
 
