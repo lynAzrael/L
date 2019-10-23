@@ -5,6 +5,12 @@
 
 ### 通过MetaMask创建账户
 
+登录metamask官网或者谷歌商店，通过插件的方式安装在浏览器上，本文档中使用的Chrome浏览器
+
+![](https://github.com/lynAzrael/L/blob/master/share/img/metamask_chrome.png)
+
+使用metamask创建账户
+
 ![](https://github.com/lynAzrael/L/blob/master/share/img/create_account_metamask.png)
 
 ### 私钥导出
