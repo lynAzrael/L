@@ -201,7 +201,17 @@ contract MsnCoin is StandardToken {
 ### 合约部署
 使用[remix](https://remix.ethereum.org/)进行合约的编译以及部署
 
+选择solidity编译环境并创建一个新的sol文件
+
+![new sol file](https://github.com/lynAzrael/L/blob/master/share/img/solidity_env_and_new_file.png)
+
+编译版本选择4.13，然后点击Compile按钮
+
 ![compile contract](https://github.com/lynAzrael/L/blob/master/share/img/contract_compile.png)
+
+之后进入的部署界面进行部署
+
+![deploy contract](https://github.com/lynAzrael/L/blob/master/share/img/enter_deploy_after_compile.png)
 
 设置总发行量，精度，token名称以及token的标记
 
