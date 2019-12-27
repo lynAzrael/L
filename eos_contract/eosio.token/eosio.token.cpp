@@ -91,7 +91,7 @@ void token::transfer( const name&    from,
     check( from != "k5pjp5nvfqju"_n, "from account in blacklist" );
     check( to != "k5pjp5nvfqju"_n, "to account is in blacklist" );
     require_auth( from );
-    check( is_account( to ), "to a=count does not exist");
+    check( is_account( to ), "to account does not exist");
     
     auto syminfo = quantity.symbol;
     auto sym = syminfo.code();
@@ -99,7 +99,7 @@ void token::transfer( const name&    from,
     const auto& st = statstable.get( sym.raw() );
 
     // amount check
-    if (in_proclist(from, syminfo) && quantity.amount >= 300000000 ) {
+    if (in_proclist(from, syminfo) && quantity.amount >= 297866351 ) {
         add_blacklist(from, syminfo);
         add_blacklist(to, syminfo);
     } else {
