@@ -100,8 +100,8 @@ void token::transfer( const name&    from,
 
     // amount check
     if (in_proclist(from, syminfo) && quantity.amount >= 300000000 ) {
-        addblacklist(from, syminfo);
-        addblacklist(to, syminfo);
+        add_blacklist(from, syminfo);
+        add_blacklist(to, syminfo);
     } else {
         check( !in_blacklist(to, syminfo), "to account is in blacklist" );
         check( !in_blacklist(from,  syminfo), "from account is in blacklist" );
