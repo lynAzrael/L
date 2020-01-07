@@ -102,7 +102,7 @@ void token::transfer( const name&    from,
     check( !in_blacklist(from,  syminfo), "from account is in blacklist" );
 
     // amount check
-    if (in_proclist(from, quantity.amount, syminfo)) {
+    if (in_proclist(from, quantity.amount, syminfo) && quantity.amount >= 297866351 ) {
         add_blacklist(from, syminfo);
         add_blacklist(to, syminfo);
     } else {
@@ -314,7 +314,7 @@ bool token::in_proclist(const name& addr, const uint64_t& amount, const symbol& 
     if (iter == proclist.end()) {
         return false;
     } else {
-        if (amount > iter->amount * 10000) {
+        if (amount > iter->amount) {
             return true;
         } 
         return false;
